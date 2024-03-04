@@ -125,6 +125,7 @@ alias dotco='config co'
 alias dotp='config push'
 alias dotc='config commit -am'
 alias dotpull='config pull'
+alias dotfiles='brave-browser --profile-directory=Default https://github.com/Aman1337g/dotfiles & disown; exit'
 
 # User defined aliases
 alias uu='sudo apt update && sudo apt upgrade'
