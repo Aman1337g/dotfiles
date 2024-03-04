@@ -119,11 +119,12 @@ fi
 # bare git repo alias for dotfiles
 alias config="/usr/bin/git --git-dir=$HOME/.dotfiles --work-tree=$HOME"
 alias dots='config status'
+alias dot='config add'
 alias dota='config add -u'
 alias dotco='config co'
 alias dotp='config push'
-alias dotci='config commit -m'
-alias dotcia='config commit -am'
+alias dotc='config commit -am'
+alias dotpull='config pull'
 
 # User defined aliases
 alias uu='sudo apt update && sudo apt upgrade'
