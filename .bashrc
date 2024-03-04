@@ -116,8 +116,36 @@ if ! shopt -oq posix; then
   fi
 fi
 
+# bare git repo alias for dotfiles
+alias config="/usr/bin/git --git-dir=$HOME/.dotfiles --work-tree=$HOME"
+alias dots='config status'
+alias dota='config add -u'
+alias dotco='config co'
+alias dotp='config push'
+alias dotci='config commit -m'
+alias dotcia='config commit -am'
+
 # User defined aliases
 alias uu='sudo apt update && sudo apt upgrade'
 alias nr='sudo nextdns restart'
 alias mc='NuSMV'
-alias config='/usr/bin/git --git-dir=/home/aman/.dotfiles/ --work-tree=/home/aman'
+
+# git
+alias aup='git add -u'
+alias aall='git add .'
+alias br='git branch'
+alias co='git checkout'
+alias clone='git clone'
+alias ci='git commit -m'
+alias fetch='git fetch'
+alias pull='git pull origin'
+alias p='git push origin'
+alias s='git status'  # 'status' is protected name so using 'stat' instead
+alias tag='git tag'
+alias newtag='git tag -a'
+alias del='git delete -D'
+alias lg="git log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit --date=relative"
+alias edit='git config --global --edit'
+alias m='git branch -M main'
+alias b='git checkout -b'
+alias cia='git commit -am'
