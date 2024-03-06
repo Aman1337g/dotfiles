@@ -131,6 +131,7 @@ alias dotfiles='brave-browser --profile-directory=Default https://github.com/Ama
 alias uu='sudo apt update && sudo apt upgrade'
 alias nr='sudo nextdns restart'
 alias mc='NuSMV'
+alias md='function _mkcd() { mkdir -p "$1" && cd "$1"; }; _mkcd'
 
 # git
 alias aup='git add -u'
