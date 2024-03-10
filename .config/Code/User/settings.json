@@ -62,5 +62,11 @@
         "mojo": "mojo run"
     },
     "editor.fontSize": 16,
-    "explorer.confirmDragAndDrop": false
+    "explorer.confirmDragAndDrop": false,
+    "github.copilot.enable": {
+        "*": true,
+        "plaintext": false,
+        "markdown": false,
+        "scminput": false
+    }
 }
