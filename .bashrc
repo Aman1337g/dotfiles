@@ -133,6 +133,7 @@ alias nr='sudo nextdns restart'
 alias mc='NuSMV'
 alias md='function _mkcd() { mkdir -p "$1" && cd "$1"; }; _mkcd'
 alias permit='sudo chown -R aman:aman'
+alias rmshop='sudo rm /etc/xdg/autostart/io.elementary.appcenter-daemon.desktop'
 
 # git
 alias aup='git add -u'
