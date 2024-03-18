@@ -134,6 +134,8 @@ alias mc='NuSMV'
 alias md='function _mkcd() { mkdir -p "$1" && cd "$1"; }; _mkcd'
 alias permit='sudo chown -R aman:aman'
 alias rmshop='sudo rm /etc/xdg/autostart/io.elementary.appcenter-daemon.desktop'
+alias bedit='sudo nano ~/.bashrc'
+alias e='exit'
 
 # git
 alias aup='git add -u'
@@ -154,3 +156,11 @@ alias edit='git config --global --edit'
 alias m='git branch -M main'
 alias b='git checkout -b'
 alias cia='git commit -am'
+
+# tmux aliases
+alias t='tmux'
+alias tls='tmux ls'
+alias ta='tmux attach -t'
+alias tnew='tmux new -s'
+alias tkill='tmux kill-session -t'
+alias tks='tmux kill-server'
