@@ -126,6 +126,8 @@ alias dotp='config push'
 alias dotc='config commit -am'
 alias dotpull='config pull'
 alias dotfiles='brave-browser --profile-directory=Default https://github.com/Aman1337g/dotfiles & disown; exit'
+alias dotlg="config log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit --date=relative"
+alias dotf='config diff'
 
 # User defined aliases
 alias uu='sudo apt update && sudo apt upgrade'
@@ -138,15 +140,16 @@ alias bedit='sudo nano ~/.bashrc'
 alias e='exit'
 
 # git
-alias aup='git add -u'
-alias aall='git add .'
+alias a='git add'
+alias gup='git add -u'
+alias gall='git add .'
 alias br='git branch'
 alias co='git checkout'
 alias clone='git clone'
 alias ci='git commit -m'
 alias fetch='git fetch'
-alias pull='git pull origin'
-alias p='git push origin'
+alias pull='git pull origin main'
+alias p='git push origin main'
 alias s='git status'
 alias tag='git tag'
 alias newtag='git tag -a'
@@ -164,3 +167,18 @@ alias ta='tmux attach -t'
 alias tnew='tmux new -s'
 alias tkill='tmux kill-session -t'
 alias tks='tmux kill-server'
+
+# Docker aliases
+alias d='docker'
+alias dps='docker ps'
+alias dpsa='docker ps -a'
+alias dimages='docker images'
+alias dbuild='docker build'
+alias dstopall='docker stop $(docker ps -aq)'
+alias drmi='docker rmi'
+alias dclean='docker system prune -a'
+alias dcompose='docker-compose'
+
+export NVM_DIR="$HOME/.nvm"
+[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
+[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
