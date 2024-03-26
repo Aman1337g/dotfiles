@@ -101,19 +101,19 @@ symbol = " "
 symbol = " "
 
 [haskell]
-symbol = "λ "
+symbol = " "
 
 [memory_usage]
-symbol = " "
+symbol = "󰍛 "
 
 [nim]
-symbol = " "
+symbol = " "
 
 [nix_shell]
 symbol = " "
 
 [package]
-symbol = " "
+symbol = " "
 
 [perl]
 symbol = " "
@@ -144,7 +144,7 @@ symbol = " "
 symbol = " "
 
 [swift]
-symbol = "ﯣ "
+symbol = " "
 
 [nodejs]
 format = "via [ Node.js $version](bold green) "

@@ -30,7 +30,7 @@ dotlg() {
 dotf() {
     config diff "$@"
 }
-alias dotfiles='brave-browser --profile-directory=Default https://github.com/Aman1337g/dotfiles & disown; exit;'
+alias dotfiles='brave-browser --profile-directory=Default https://github.com/Aman1337g/dotfiles & disown; exit'
 
 
 # Git aliases
