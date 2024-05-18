@@ -1,0 +1,12 @@
+_connect() {
+    local cur="${COMP_WORDS[COMP_CWORD]}"
+    local ssids
+
+    # Get a list of available Wi-Fi networks
+    ssids=$(nmcli -t -f SSID dev wifi | grep -v '^--' | sort -u)
+
+    # Generate completions
+    COMPREPLY=( $(compgen -W "$ssids" -- "$cur") )
+}
+
+complete -F _connect connect
