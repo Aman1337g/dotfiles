@@ -69,6 +69,5 @@
         "markdown": false,
         "scminput": false
     },
-    "editor.formatOnSave": true,
     "terminal.integrated.defaultProfile.linux": "bash"
 }
