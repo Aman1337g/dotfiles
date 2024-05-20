@@ -1,61 +1,22 @@
-# Define a function for dotfile management
-config() {
-    /usr/bin/git --git-dir="$HOME/.dotfiles" --work-tree="$HOME" "$@"
-}
-# Dotfile management functions
-dots() {
-    config status "$@"
-}
-dot() {
-    config add "$@"
-}
-dota() {
-    config add -u "$@"
-}
-dotco() {
-    config checkout "$@"
-}
-dotp() {
-    config push "$@"
-}
-dotc() {
-    config commit -am "$@"
-}
-dotpull() {
-    config pull "$@"
-}
-dotlg() {
-    config log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit --date=relative "$@"
-}
-dotf() {
-    config diff "$@"
-}
-dotls() {
-    config ls-tree -r HEAD
-}
 alias dotfiles='brave-browser --profile-directory=Default https://github.com/Aman1337g/dotfiles & disown; exit'
 
 
 # Git aliases
+alias addup='git add -u'
+alias addall='git add .'
+alias branch='git branch'
+alias checkout='git checkout'
+alias clone='git clone'
+alias commit='git commit -m'
+alias fetch='git fetch'
+alias pull='git pull origin'
+alias push='git push origin'
+alias s='git status'  # 'status' is protected name so using 'stat' instead
+alias tag='git tag'
+alias newtag='git tag -a'
 alias edit='git config --global --edit'
-alias g='git'
-alias ga='git add'
-alias gup='git add -u'
-alias gall='git add .'
-alias gc='git commit -m'
-alias cia='git commit -am'
-alias s='git status'
 alias gl='git log --oneline --decorate --graph'
 alias lg="git log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit --date=relative"
-alias gd='git diff'
-alias gco='git checkout'
-alias br='git branch'
-alias gp='git pull'
-alias gf='git fetch'
-alias gps='git push'
-alias clone='git clone'
-alias gsh='git stash'
-alias rebase='git pull --rebase'
 
 
 # Misc aliases
