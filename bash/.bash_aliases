@@ -11,19 +11,19 @@ alias .....='cd ../../../..'
 
 
 # Git aliases
-alias addup='git add -u'
-alias addall='git add .'
-alias branch='git branch'
-alias checkout='git checkout'
+alias aup='git add -u'
+alias aall='git add .'
+alias br='git branch'
+alias co='git checkout'
 alias clone='git clone'
-alias commit='git commit -m'
+alias ci='git commit -m'
 alias fetch='git fetch'
 alias pull='git pull origin'
 alias push='git push origin'
 alias s='git status'  # 'status' is protected name so using 'stat' instead
 alias tag='git tag'
 alias newtag='git tag -a'
-alias edit='git config --global --edit'
+alias gcnf='git config --global --edit'
 alias gl='git log --oneline --decorate --graph'
 alias lg="git log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit --date=relative"
 

@@ -100,5 +100,9 @@
         "key": "alt+down",
         "command": "-editor.action.moveLinesDownAction",
         "when": "editorTextFocus && !editorReadonly"
+    },
+    {
+        "key": "ctrl+shift+m",
+        "command": "workbench.action.terminal.fontZoomReset"
     }
 ]
