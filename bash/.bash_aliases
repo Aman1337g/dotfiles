@@ -218,6 +218,7 @@ kr() {
 }
 alias icat="kitten icat"
 alias d="kitten diff"
+alias kd="git difftool --no-symlinks --dir-diff"
 
 
 # The terminal rickroll
