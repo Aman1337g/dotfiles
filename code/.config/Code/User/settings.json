@@ -70,5 +70,7 @@
         "scminput": false
     },
     "terminal.integrated.defaultProfile.linux": "bash",
-    "extensions.ignoreRecommendations": true
+    "extensions.ignoreRecommendations": true,
+    "terminal.integrated.fontFamily": "JetBrainsMono Nerd Font",
+    "editor.fontFamily": "JetBrainsMono Nerd Font , 'Droid Sans Mono', 'monospace', monospace "
 }

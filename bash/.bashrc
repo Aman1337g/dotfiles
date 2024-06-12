@@ -28,7 +28,7 @@ case ${TERM} in
 esac
 
 ### SHOPT
-shopt -s autocd # change to named directory
+# shopt -s autocd # change to named directory   # commented out bcoz using zoxide
 shopt -s cdspell # autocorrects cd misspellings
 shopt -s cmdhist # save multi-line commands in history as single line
 shopt -s dotglob
@@ -51,16 +51,7 @@ alias l.='eza -a | egrep "^\."' # list all . files
 alias l..='eza -al --color=always --group-directories-first ../../' # ls on directory 2 levels up
 alias l...='eza -al --color=always --group-directories-first ../../../' # ls on directory 3 levels up
 
-# adding flags
-alias df='df -h'               # human-readable sizes
-alias free='free -m'           # show sizes in MB
 alias grep='grep --color=auto' # colorize output (good for log files)
-
-# ps
-alias psa="ps auxf"
-alias psgrep="ps aux | grep -v grep | grep -i -e VSZ -e"
-alias psmem='ps auxf | sort -nr -k 4'
-alias pscpu='ps auxf | sort -nr -k 3'
 
 # Add an "alert" alias for long running commands.  Use like so:
 #   sleep 10; alert
@@ -86,8 +77,15 @@ if ! shopt -oq posix; then
   fi
 fi
 
-eval "$(starship init bash)"
 
 export NVM_DIR="$HOME/.nvm"
 [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
 [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
+
+export PATH="$PATH:/opt/nvim/"
+
+bind '"\C-f":"cdi\n"'
+
+### SETTING THE STARSHIP PROMPT ###
+eval "$(starship init bash)"
+eval "$(zoxide init --cmd cd bash)"
