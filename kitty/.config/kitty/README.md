@@ -45,6 +45,8 @@ press `ctrl` + `a` in the same time, release and then, press R (`shift`+`r`)
 | --------------------------------------------- | ------------------ |
 | <kbd>ctrl</kbd>+<kbd>shift</kbd>+<kbd>←</kbd> | goto previous tab        |
 | <kbd>ctrl</kbd>+<kbd>shift</kbd>+<kbd>→</kbd> | goto next tab           |
+| <kbd>ctrl</kbd>+<kbd>shift</kbd>+<kbd>[</kbd> | goto previous tab        |
+| <kbd>ctrl</kbd>+<kbd>shift</kbd>+<kbd>]</kbd> | goto next tab           |
 | <kbd>ctrl</kbd>+<kbd>shift</kbd>+<kbd>,</kbd> | move tab backward  |
 | <kbd>ctrl</kbd>+<kbd>shift</kbd>+<kbd>.</kbd> | move tab forward   |
 | <kbd>ctrl</kbd>+<kbd>a</kbd>><kbd>,</kbd>     | change tab title   |
@@ -68,6 +70,7 @@ press `ctrl` + `a` in the same time, release and then, press R (`shift`+`r`)
 | <kbd>alt</kbd>+<kbd>shift</kbd>+<kbd>v</kbd> | vertial split                |
 | <kbd>ctrl</kbd>+<kbd>a</kbd>><kbd>x</kbd>                   | close window                 |
 | <kbd>ctrl</kbd>+<kbd>a</kbd>><kbd>z</kbd>                   | zoom (maxmize) window        |
+| <kbd>ctrl</kbd>+<kbd>shift</kbd>+<kbd>l</kbd>                   | zoom (maxmize) window        |
 | <kbd>ctrl</kbd>+<kbd>shift</kbd>+<kbd>r</kbd>               | resize window                |
 | <kbd>ctrl</kbd>+<kbd>←</kbd>                                | goto left window               |
 | <kbd>ctrl</kbd>+<kbd>→</kbd>                                | goto right window              |
@@ -81,6 +84,8 @@ press `ctrl` + `a` in the same time, release and then, press R (`shift`+`r`)
 | <kbd>alt</kbd>+<kbd>shift</kbd>+<kbd>l</kbd>                               | move current window to right |
 | <kbd>alt</kbd>+<kbd>shift</kbd>+<kbd>k</kbd>                               | move current window to up    |
 | <kbd>alt</kbd>+<kbd>shift</kbd>+<kbd>j</kbd>                               | move current window to down  |
+| <kbd>ctrl</kbd>+<kbd>shift</kbd>+<kbd>f</kbd>                               | move current window forward  |
+| <kbd>ctrl</kbd>+<kbd>shift</kbd>+<kbd>b</kbd>                               | move current window backward  |
 | <kbd>alt</kbd>+<kbd>n</kbd>                                 | resize window narrower       |
 | <kbd>alt</kbd>+<kbd>w</kbd>                                 | resize window wider          |
 | <kbd>alt</kbd>+<kbd>u</kbd>                                 | resize window taller         |
