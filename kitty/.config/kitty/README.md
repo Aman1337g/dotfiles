@@ -1,18 +1,12 @@
 # my-kitty-config
 
-the kitty config for tmux users
-
-the shortcuts (key bindings) is heavily inspired by [Oh my tmux!](https://github.com/gpakosz/.tmux#bindings)
-
-mainly used under Linux
-
 ## usage
 
 ```shell
 # backup your config first
 # mv ~/.config/kitty  ~/.config/kitty.bak
 
-## suggested shell alias
+## suggested shell aliases (already using in my .bash_aliases)
 
 ```shell
 alias icat="kitten icat"
@@ -68,10 +62,10 @@ press `ctrl` + `a` in the same time, release and then, press R (`shift`+`r`)
 
 | key                                                         | description                  |
 | ----------------------------------------------------------- | ---------------------------- |
-| <kbd>ctrl</kbd>+<kbd>a</kbd>><kbd>-</kbd>                   | horizontal split with cwd    |
-| <kbd>ctrl</kbd>+<kbd>a</kbd>><kbd>shift</kbd>+<kbd>-</kbd>  | horizontal split             |
-| <kbd>ctrl</kbd>+<kbd>a</kbd>><kbd>\\</kbd>                  | vertial split with cwd       |
-| <kbd>ctrl</kbd>+<kbd>a</kbd>><kbd>shift</kbd>+<kbd>\\</kbd> | vertial split                |
+| <kbd>alt</kbd>+<kbd>g</kbd>                   | horizontal split with cwd    |
+| <kbd>alt</kbd>+<kbd>shift</kbd>+<kbd>g</kbd>  | horizontal split             |
+| <kbd>alt</kbd>+<kbd>v</kbd>                  | vertial split with cwd       |
+| <kbd>alt</kbd>+<kbd>shift</kbd>+<kbd>v</kbd> | vertial split                |
 | <kbd>ctrl</kbd>+<kbd>a</kbd>><kbd>x</kbd>                   | close window                 |
 | <kbd>ctrl</kbd>+<kbd>a</kbd>><kbd>z</kbd>                   | zoom (maxmize) window        |
 | <kbd>ctrl</kbd>+<kbd>shift</kbd>+<kbd>r</kbd>               | resize window                |
@@ -79,19 +73,19 @@ press `ctrl` + `a` in the same time, release and then, press R (`shift`+`r`)
 | <kbd>ctrl</kbd>+<kbd>→</kbd>                                | goto right window              |
 | <kbd>ctrl</kbd>+<kbd>↑</kbd>                                | goto up window                 |
 | <kbd>ctrl</kbd>+<kbd>↓</kbd>                                | goto down window               |
-| <kbd>ctrl</kbd>+<kbd>a</kbd>><kbd>h</kbd>                   | goto left window               |
-| <kbd>ctrl</kbd>+<kbd>a</kbd>><kbd>l</kbd>                   | goto right window              |
-| <kbd>ctrl</kbd>+<kbd>a</kbd>><kbd>k</kbd>                   | goto up window                 |
-| <kbd>ctrl</kbd>+<kbd>a</kbd>><kbd>j</kbd>                   | goto down window               |
-| <kbd>shift</kbd>+<kbd>←</kbd>                               | move current window to left  |
-| <kbd>shift</kbd>+<kbd>→</kbd>                               | move current window to right |
-| <kbd>shift</kbd>+<kbd>↑</kbd>                               | move current window to up    |
-| <kbd>shift</kbd>+<kbd>↓</kbd>                               | move current window to down  |
+| <kbd>alt</kbd>+<kbd>h</kbd>                  | goto left window               |
+| <kbd>alt</kbd>+<kbd>l</kbd>                  | goto right window              |
+| <kbd>alt</kbd>+<kbd>k</kbd>                  | goto up window                 |
+| <kbd>alt</kbd>+<kbd>j</kbd>                  | goto down window               |
+| <kbd>alt</kbd>+<kbd>shift</kbd>+<kbd>h</kbd>                               | move current window to left  |
+| <kbd>alt</kbd>+<kbd>shift</kbd>+<kbd>l</kbd>                               | move current window to right |
+| <kbd>alt</kbd>+<kbd>shift</kbd>+<kbd>k</kbd>                               | move current window to up    |
+| <kbd>alt</kbd>+<kbd>shift</kbd>+<kbd>j</kbd>                               | move current window to down  |
 | <kbd>alt</kbd>+<kbd>n</kbd>                                 | resize window narrower       |
 | <kbd>alt</kbd>+<kbd>w</kbd>                                 | resize window wider          |
 | <kbd>alt</kbd>+<kbd>u</kbd>                                 | resize window taller         |
 | <kbd>alt</kbd>+<kbd>d</kbd>                                 | resize window shorter        |
-| <kbd>ctrl</kbd>+<kbd>home</kbd>                             | resize window reset          |
+| <kbd>ctrl</kbd>+<kbd>shift</kbd>+<kbd>enter</kbd>                             | resize window reset          |
 
 ### font
 
@@ -167,3 +161,7 @@ on other terminal:
 ```
  kitty @ --to unix:/run/user/1000/kitty.sock launch --type=tab --cwd "/tmp" --tab-title "My Tab" --keep-focus bash
 ```
+
+## credits
+
+- https://github.com/ttys3/my-kitty-config

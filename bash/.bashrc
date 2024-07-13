@@ -85,6 +85,8 @@ export NVM_DIR="$HOME/.nvm"
 export PATH="$PATH:/opt/nvim/"
 
 bind '"\C-f":"cdi\n"'
+# Set up fzf key bindings and fuzzy completion
+eval "$(fzf --bash)"
 
 ### SETTING THE STARSHIP PROMPT ###
 eval "$(starship init bash)"

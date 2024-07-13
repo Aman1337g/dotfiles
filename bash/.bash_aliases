@@ -52,15 +52,20 @@ alias count="for t in files links directories; do \
   count=\$(find . -type \$type_flag 2>/dev/null | wc -l); \
   echo \$count \$t; \
 done"                                                        # counting files, directories and links
-alias da='date "+%Y-%m-%d %A %T %Z"'                         # date and time
+alias da='date'                         # date and time
 
 
 # Permission commands
 alias mx='chmod a+x'
 alias permit='sudo chown -R aman:aman'
 
+
 # Nicer cat
 alias cat='batcat'
+
+
+# fuzzy finding
+alias ff='fzf --preview="batcat --color=always {}"'
 
 
 # Copy commands

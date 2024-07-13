@@ -6,6 +6,8 @@ git clone https://github.com/Aman1337g/dotfiles.git
 stow bash code git kitty starship tmux fonts
 sudo stow --target=/etc/bash_completion.d etc-bash_completion.d
 sudo stow --target=/etc etc-copy-paste-hang-sol
+sudo sysctl -p  # to apply the etc-copy-paste-hang-sol change
+
 ```
 
 ## FAQs
