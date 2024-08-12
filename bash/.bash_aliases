@@ -12,7 +12,7 @@ alias .....='cd ../../../..'
 
 # Git aliases
 alias aup='git add -u'
-alias aall='git add .'
+alias a.='git add .'
 alias br='git branch'
 alias co='git checkout'
 alias clone='git clone'
@@ -39,6 +39,7 @@ alias gedit='nano ~/.gitconfig'
 alias mint='source ~/.bashrc'
 alias e='exit'
 alias c='clear'
+alias b='bluetoothctl'
 alias i='sudo apt install'
 alias purge='sudo apt purge'
 alias atrm='sudo apt autoremove'
@@ -55,8 +56,13 @@ done"                                                        # counting files, d
 alias da='date'                         # date and time
 
 
+# Neovim commands
+alias v='nvim'
+
+
 # Permission commands
 alias mx='chmod a+x'
+alias x='chmod u+x'
 alias permit='sudo chown -R aman:aman'
 
 

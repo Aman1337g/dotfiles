@@ -82,7 +82,8 @@ export NVM_DIR="$HOME/.nvm"
 [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
 [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
 
-export PATH="$PATH:/opt/nvim/"
+# Setting neovim path variable
+export PATH="$PATH:/opt/nvim-linux64/bin"
 
 bind '"\C-f":"cdi\n"'
 # Set up fzf key bindings and fuzzy completion
