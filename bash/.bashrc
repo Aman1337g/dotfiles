@@ -36,8 +36,25 @@ shopt -s histappend # do not overwrite history
 shopt -s expand_aliases # expand aliases
 shopt -s checkwinsize # checks term size when bash regains control
 
-#ignore upper and lowercase when TAB completion
-#bind "set completion-ignore-case on"
+# set up XDG folders
+export XDG_DATA_HOME="$HOME/.local/share"
+export XDG_CONFIG_HOME="$HOME/.config"
+export XDG_STATE_HOME="$HOME/.local/state"
+export XDG_CACHE_HOME="$HOME/.cache"
+
+# Set the default editor
+export EDITOR=nvim
+export VISUAL=nvim
+
+# Note: bind used instead of sticking these in .inputrc
+if [[ $- == *i* ]]; then
+    # Ignore case on auto-completion
+    bind "set completion-ignore-case on"
+
+    # Show auto-completion list automatically, without double tab
+    bind "set show-all-if-ambiguous On"
+fi
+
 
 # colored GCC warnings and errors
 #export GCC_COLORS='error=01;31:warning=01;35:note=01;36:caret=01;32:locus=01:quote=01'
