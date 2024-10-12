@@ -30,6 +30,7 @@ alias diff="git diff"
 
 # Misc aliases
 alias uu='sudo apt update && sudo apt upgrade'
+alias ai='apt info'
 alias nr='sudo nextdns restart'
 alias md='function _mkcd() { mkdir -p "$1" && cd "$1"; }; _mkcd'
 alias rmshop='sudo rm /etc/xdg/autostart/io.elementary.appcenter-daemon.desktop'
@@ -55,11 +56,15 @@ alias count="for t in files links directories; do \
   echo \$count \$t; \
 done"                                                        # counting files, directories and links
 alias da='date'                         # date and time
-
+crp() {
+    realpath "$1" | xclip -selection clipboard
+}
 
 # Neovim commands
 alias v='nvim'
 
+# Syncthing
+alias ms='syncthing --no-browser'  # mind sync
 
 # Permission commands
 alias mx='chmod a+x'
@@ -224,14 +229,14 @@ alias p='python'
 alias vc="python -m virtualenv"
 
 
-# Kitty Reload
+# Kitty aliases
 kr() {
     kill -SIGUSR1 $(pidof kitty)
 }
 alias icat="kitten icat"
 alias d="kitten diff"
 alias kd="git difftool --no-symlinks --dir-diff"
-
+alias ku="curl -L https://sw.kovidgoyal.net/kitty/installer.sh | sh /dev/stdin"
 
 # The terminal rickroll
 alias rr="curl -s -L https://raw.githubusercontent.com/keroserene/rickrollrc/master/roll.sh | bash"

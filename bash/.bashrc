@@ -101,6 +101,8 @@ export NVM_DIR="$HOME/.nvm"
 
 # Setting neovim path variable
 export PATH="$PATH:/opt/nvim-linux64/bin"
+# Setting up path for custom scripts
+export PATH="$HOME/scripts:$PATH"
 
 bind '"\C-f":"cdi\n"'
 # Set up fzf key bindings and fuzzy completion
