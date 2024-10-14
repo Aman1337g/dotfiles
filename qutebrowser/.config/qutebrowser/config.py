@@ -54,6 +54,7 @@ config.set('content.javascript.enabled', False)
 # Enable it on DDG
 config.set('content.javascript.enabled', True, '*://duckduckgo.com/')
 config.set('content.javascript.enabled', True, 'https://www.youtube.com/')
+config.set('content.javascript.enabled', True, 'https://github.com/*')
 # javascript enable
 config.bind('<Space>je', ':set content.javascript.enabled true')
 # javascript disable
