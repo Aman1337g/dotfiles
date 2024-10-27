@@ -11,7 +11,7 @@ else
     devices=$(bluetoothctl devices | awk '{print $3}')
     
     # Display device selection menu using zenity
-    select=$(echo "$devices" | zenity --list --column="Devices" --title="Select Bluetooth Device" --height=300 --width=400)
+    # select=$(echo "$devices" | zenity --list --column="Devices" --title="Select Bluetooth Device" --height=300 --width=400)
     
     MAC=$(bluetoothctl devices | grep "$select" | awk '{print $2}')
     [ -z $MAC ] && MAC="NoDeviceFound"  # Prevents accidental disconnect error

@@ -59,12 +59,19 @@ alias da='date'                         # date and time
 crp() {
     realpath "$1" | xclip -selection clipboard
 }
+alias zinstall='curl -sSfL https://raw.githubusercontent.com/ajeetdsouza/zoxide/main/install.sh | sh'  # installing latest zoxide binary in ~/.local/bin/ 
 
 # Neovim commands
 alias v='nvim'
 
+
 # Syncthing
 alias ms='syncthing --no-browser'  # mind sync
+
+
+# Qutebrowser update
+alias qu='cd $HOME/qutebrowser/ && scripts/mkvenv.py --update && exit'
+
 
 # Permission commands
 alias mx='chmod a+x'

@@ -13,7 +13,6 @@
 ## This is here so configs done via the GUI are still loaded.
 ## Remove it to not load settings done via the GUI.
 config.load_autoconfig(False)
-
 ## Aliases for commands. The keys of the given dictionary are the
 ## aliases, while the values are the commands they map to.
 ## Type: Dict
@@ -55,6 +54,7 @@ config.set('content.javascript.enabled', False)
 config.set('content.javascript.enabled', True, '*://duckduckgo.com/')
 config.set('content.javascript.enabled', True, 'https://www.youtube.com/')
 config.set('content.javascript.enabled', True, 'https://github.com/*')
+config.set('content.javascript.enabled', True, 'https://www.skool.com/*')
 # javascript enable
 config.bind('<Space>je', ':set content.javascript.enabled true')
 # javascript disable
@@ -1256,7 +1256,7 @@ c.content.webrtc_ip_handling_policy = 'disable-non-proxied-udp'
 ## Same as `{column}`, but starting from index 0.
 ## Type: ShellCommand
 # c.editor.command = ['gvim', '-f', '{file}', '-c', 'normal {line}G{column0}l']
-
+c.editor.command = ['kitty', '--class', 'nvim-editor', '/opt/nvim-linux64/bin/nvim', '{}']
 ## Encoding to use for the editor.
 ## Type: Encoding
 # c.editor.encoding = 'utf-8'
@@ -1703,7 +1703,7 @@ c.content.user_stylesheets = [
 ## list) will work.
 ## Type: List of String
 # c.qt.args = []
-
+c.qt.workarounds.disable_hangouts_extension = True
 ## Enables Web Platform features that are in development. This passes the
 ## `--enable-experimental-web-platform-features` flag to Chromium. By
 ## default, this is enabled with Qt 5 to maximize compatibility despite

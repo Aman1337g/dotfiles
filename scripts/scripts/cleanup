@@ -1,0 +1,60 @@
+
+#!/bin/bash
+
+# Colors for output
+YELLOW='\033[1;33m'
+GREEN='\033[1;32m'
+RED='\033[0;31m'
+RC='\033[0m' # Reset color
+
+# Escalation tool, e.g., sudo
+ESCALATION_TOOL="sudo"
+PACKAGER="apt"
+
+cleanup_system() {
+    printf "%b\n" "${YELLOW}Performing system cleanup...${RC}"
+    "$ESCALATION_TOOL" "$PACKAGER" clean
+    "$ESCALATION_TOOL" "$PACKAGER" autoremove -y
+    "$ESCALATION_TOOL" "$PACKAGER" autoclean
+    "$ESCALATION_TOOL" du -h /var/cache/apt
+}
+
+common_cleanup() {
+    printf "%b\n" "${YELLOW}Performing common cleanup...${RC}"
+    
+    if [ -d /var/tmp ]; then
+        "$ESCALATION_TOOL" find /var/tmp -type f -atime +5 -delete
+    fi
+    if [ -d /tmp ]; then
+        "$ESCALATION_TOOL" find /tmp -type f -atime +5 -delete
+    fi
+    if [ -d /var/log ]; then
+        "$ESCALATION_TOOL" find /var/log -type f -name "*.log" -exec truncate -s 0 {} \;
+    fi
+    "$ESCALATION_TOOL" journalctl --vacuum-time=3d
+}
+
+clean_data() {
+    printf "%b" "${YELLOW}Clean up old cache files and empty the trash? (y/N): ${RC}"
+    read -r clean_response
+    case $clean_response in
+        y|Y)
+            printf "%b\n" "${YELLOW}Cleaning up old cache files and emptying trash...${RC}"
+            if [ -d "$HOME/.cache" ]; then
+                find "$HOME/.cache/" -type f -atime +5 -delete
+            fi
+            if [ -d "$HOME/.local/share/Trash" ]; then
+                find "$HOME/.local/share/Trash" -mindepth 1 -delete
+            fi
+            printf "%b\n" "${GREEN}Cache and trash cleanup completed.${RC}"
+            ;;
+        *)
+            printf "%b\n" "${YELLOW}Skipping cache and trash cleanup.${RC}"
+            ;;
+    esac
+}
+
+# Main script execution
+cleanup_system
+common_cleanup
+clean_data
