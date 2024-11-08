@@ -80,7 +80,7 @@ alias permit='sudo chown -R aman:aman'
 
 
 # Nicer cat
-alias cat='batcat'
+alias cat='bat'
 
 
 # fuzzy finding

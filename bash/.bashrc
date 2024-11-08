@@ -111,3 +111,6 @@ eval "$(fzf --bash)"
 ### SETTING THE STARSHIP PROMPT ###
 eval "$(starship init bash)"
 eval "$(zoxide init --cmd cd bash)"
+export PYENV_ROOT="$HOME/.pyenv"
+command -v pyenv >/dev/null || export PATH="$PYENV_ROOT/bin:$PATH"
+eval "$(pyenv init -)"
