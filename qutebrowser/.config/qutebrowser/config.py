@@ -50,11 +50,12 @@ config.bind('se', 'jseval (function () { '+
 # c.content.javascript.enabled = False
 # This is an equivalent form, I re-write in this other form for uniformity's sake in this particular block.
 config.set('content.javascript.enabled', False)
-# Enable it on DDG
-config.set('content.javascript.enabled', True, '*://duckduckgo.com/')
+# Enable javascript for selected sites
+config.set('content.javascript.enabled', True, 'https://duckduckgo.com/')
 config.set('content.javascript.enabled', True, 'https://www.youtube.com/')
 config.set('content.javascript.enabled', True, 'https://github.com/*')
 config.set('content.javascript.enabled', True, 'https://www.skool.com/*')
+config.set('content.javascript.enabled', True, 'https://www.geeksforgeeks.org/*')
 # javascript enable
 config.bind('<Space>je', ':set content.javascript.enabled true')
 # javascript disable
@@ -63,7 +64,20 @@ config.bind('<Space>jd', ':set content.javascript.enabled false')
 config.bind('<Space>ss', 'cmd-set-text -s :session-save')
 config.bind('<Space>sl', 'cmd-set-text -s :session-load')
 config.bind('<Space>sd', 'cmd-set-text -s :session-delete')
+# Hot load configuration (config.py)
 config.bind('cs', 'config-source')
+# Editing configuration
+config.bind('ce', 'config-edit')
+# Adblock update 
+config.bind('au', 'adblock-update')
+# Duplicate the current tab
+config.unbind('gC')
+config.bind('<Alt-d>', 'tab-clone')
+# Safer reload
+config.unbind('r')
+config.bind('<Space>rr', 'reload')
+# Playing video in mpv 
+config.bind('<Space>p', 'hint links spawn mpv --fs {hint-url}')
 ## Time interval (in milliseconds) between auto-saves of
 ## config/cookies/etc.
 ## Type: Int
