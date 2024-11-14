@@ -60,6 +60,7 @@ crp() {
     realpath "$1" | xclip -selection clipboard
 }
 alias zinstall='curl -sSfL https://raw.githubusercontent.com/ajeetdsouza/zoxide/main/install.sh | sh'  # installing latest zoxide binary in ~/.local/bin/ 
+alias favset='dconf write /org/gnome/shell/favorite-apps "['\''brave-browser.desktop'\'', '\''google-chrome.desktop'\'', '\''code.desktop'\'', '\''libreoffice-writer.desktop'\'', '\''org.gnome.Nautilus.desktop'\'']"'
 
 # Neovim commands
 alias v='nvim'
