@@ -63,8 +63,10 @@ alias zinstall='curl -sSfL https://raw.githubusercontent.com/ajeetdsouza/zoxide/
 alias favset='dconf write /org/gnome/shell/favorite-apps "['\''brave-browser.desktop'\'', '\''google-chrome.desktop'\'', '\''code.desktop'\'', '\''libreoffice-writer.desktop'\'', '\''org.gnome.Nautilus.desktop'\'']"'
 
 # Neovim commands
-alias v='nvim'
-
+alias v='/opt/nvim-linux64/bin/nvim'
+sv() {
+    sudo -E /opt/nvim-linux64/bin/nvim "$@"
+}
 
 # Syncthing
 alias ms='syncthing --no-browser'  # mind sync

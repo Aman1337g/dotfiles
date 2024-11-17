@@ -55,16 +55,16 @@ return {
     "nvim-telescope/telescope-symbols.nvim",
     event = { "BufReadPost" },
   },
+
   {
-    "HakonHarnes/img-clip.nvim",
-    event = "VeryLazy",
-    opts = {
-      -- add options here
-      -- or leave it empty to use the default settings
-    },
-    keys = {
-      -- suggested keymap
-      { "<leader>o", "<cmd>PasteImage<cr>", desc = "Paste image from system clipboard" },
-    },
+    "iamcco/markdown-preview.nvim",
+    cmd = { "MarkdownPreview", "MarkdownPreviewStop", "MarkdownPreviewToggle" },
+    ft = { "markdown" },
+    build = function()
+      vim.fn["mkdp#util#install"]()
+    end,
+    config = function()
+      require "configs.markdown-preview"
+    end,
   },
 }

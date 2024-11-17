@@ -16,68 +16,69 @@ config.load_autoconfig(False)
 ## Aliases for commands. The keys of the given dictionary are the
 ## aliases, while the values are the commands they map to.
 ## Type: Dict
-c.aliases = {
-    'w': 'session-save', 
-    'q': 'close', 
-    'qa': 'quit', 
-    'wq': 'quit --save', 
-    'wqa': 'quit --save',
-    'wallabag': 'spawn -v -m wallabag add {url}',
-    'dt': 'set colors.webpage.darkmode.enabled true',
-    'df': 'set colors.webpage.darkmode.enabled false'
-}
+# User aliases
+# c.aliases = {}
 #
 ## Custom user bindings
 # Selection toggle is already taken by `v`, so I can free the spacebar
-config.unbind('<Space>', mode="caret")
+config.unbind("<Space>", mode="caret")
 # opening youtube
-config.bind('z', 'open https://www.youtube.com/')
+config.bind("z", "open https://www.youtube.com/")
 # vim-like navigation in command mode
-config.bind('<Ctrl-j>', 'completion-item-focus next', mode="command")
-config.bind('<Ctrl-k>', 'completion-item-focus prev', mode="command")
+config.bind("<Ctrl-j>", "completion-item-focus next", mode="command")
+config.bind("<Ctrl-k>", "completion-item-focus prev", mode="command")
 # kse: kill sticky elements
-config.bind('se', 'jseval (function () { '+
-'  var i, elements = document.querySelectorAll("body *");'+
-''+
-'  for (i = 0; i < elements.length; i++) {'+
-'    var pos = getComputedStyle(elements[i]).position;'+
-'    if (pos === "fixed" || pos == "sticky") {'+
-'      elements[i].parentNode.removeChild(elements[i]);'+
-'    }'+
-'  }'+
-'})();');
+config.bind(
+    "se",
+    "jseval (function () { "
+    + '  var i, elements = document.querySelectorAll("body *");'
+    + ""
+    + "  for (i = 0; i < elements.length; i++) {"
+    + "    var pos = getComputedStyle(elements[i]).position;"
+    + '    if (pos === "fixed" || pos == "sticky") {'
+    + "      elements[i].parentNode.removeChild(elements[i]);"
+    + "    }"
+    + "  }"
+    + "})();",
+)
 # Disable JS globally
 # c.content.javascript.enabled = False
 # This is an equivalent form, I re-write in this other form for uniformity's sake in this particular block.
-config.set('content.javascript.enabled', False)
+config.set("content.javascript.enabled", False)
 # Enable javascript for selected sites
-config.set('content.javascript.enabled', True, 'https://duckduckgo.com/')
-config.set('content.javascript.enabled', True, 'https://www.youtube.com/')
-config.set('content.javascript.enabled', True, 'https://github.com/*')
-config.set('content.javascript.enabled', True, 'https://www.skool.com/*')
-config.set('content.javascript.enabled', True, 'https://www.geeksforgeeks.org/*')
+config.set("content.javascript.enabled", True, "https://duckduckgo.com/")
+config.set("content.javascript.enabled", True, "https://www.youtube.com/")
+config.set("content.javascript.enabled", True, "https://github.com/*")
+config.set("content.javascript.enabled", True, "https://www.skool.com/*")
+config.set("content.javascript.enabled", True, "https://www.geeksforgeeks.org/*")
+config.set("content.javascript.enabled", True, "http://localhost:*")
 # javascript enable
-config.bind('<Space>je', ':set content.javascript.enabled true')
+config.bind("<Space>je", ":set content.javascript.enabled true")
 # javascript disable
-config.bind('<Space>jd', ':set content.javascript.enabled false')
+config.bind("<Space>jd", ":set content.javascript.enabled false")
 # Session
-config.bind('<Space>ss', 'cmd-set-text -s :session-save')
-config.bind('<Space>sl', 'cmd-set-text -s :session-load')
-config.bind('<Space>sd', 'cmd-set-text -s :session-delete')
+config.bind("<Space>ss", "cmd-set-text -s :session-save")
+config.bind("<Space>sl", "cmd-set-text -s :session-load")
+config.bind("<Space>sd", "cmd-set-text -s :session-delete")
 # Hot load configuration (config.py)
-config.bind('cs', 'config-source')
+config.bind("cs", "config-source")
 # Editing configuration
-config.bind('ce', 'config-edit')
-# Adblock update 
-config.bind('au', 'adblock-update')
+config.bind("ce", "config-edit")
+# Adblock update
+config.bind("au", "adblock-update")
 # Duplicate the current tab
-config.unbind('gC')
-config.bind('<Alt-d>', 'tab-clone')
+config.unbind("gC")
+config.bind("<Alt-d>", "tab-clone")
 # Safer reload
-config.unbind('r')
-config.bind('<Space>rr', 'reload')
-# Playing video in mpv 
-config.bind('<Space>p', 'hint links spawn mpv --fs {hint-url}')
+config.unbind("r")
+config.bind("<Space>rr", "reload")
+# # Playing video in mpv
+# config.bind("<Space>p", "hint links spawn mpv --fs {hint-url}")
+# config.bind('<Ctrl+/>', 'hint links spawn --detach mpv {hint-url}')
+# Dowloading site as pdf
+config.bind("<Space>d", "print --pdf ~/Desktop/{title}.pdf")
+# Cycling through dark and light theme
+config.bind("<Alt-t>", "config-cycle colors.webpage.darkmode.enabled false true")
 ## Time interval (in milliseconds) between auto-saves of
 ## config/cookies/etc.
 ## Type: Int
@@ -627,7 +628,7 @@ c.colors.webpage.darkmode.enabled = True
 ## Number of commands to save in the command history. 0: no history / -1:
 ## unlimited
 ## Type: Int
-# c.completion.cmd_history_max_items = 100
+c.completion.cmd_history_max_items = 100
 
 ## Delay (in milliseconds) before updating completions after typing a
 ## character.
@@ -707,7 +708,7 @@ c.colors.webpage.darkmode.enabled = True
 ## Number of URLs to show in the web history. 0: no history / -1:
 ## unlimited
 ## Type: Int
-# c.completion.web_history.max_items = -1
+c.completion.web_history.max_items = 10
 
 ## Require a confirmation before quitting the application.
 ## Type: ConfirmQuit
@@ -720,7 +721,7 @@ c.colors.webpage.darkmode.enabled = True
 
 ## Automatically start playing `<video>` elements.
 ## Type: Bool
-# c.content.autoplay = True
+c.content.autoplay = False
 
 ## List of URLs to ABP-style adblocking rulesets.  Only used when Brave's
 ## ABP-style adblocker is used (see `content.blocking.method`).  You can
@@ -731,11 +732,13 @@ c.colors.webpage.darkmode.enabled = True
 ## extracting it from the `location` parameter of the subscribe URL and
 ## URL-decoding it).
 ## Type: List of Url
-# c.content.blocking.adblock.lists = ['https://easylist.to/easylist/easylist.txt', 'https://easylist.to/easylist/easyprivacy.txt']
-
-## Enable the ad/host blocker
+c.content.blocking.adblock.lists = [  # Add more blocklists
+    "https://easylist.to/easylist/easylist.txt",
+    "https://easylist.to/easylist/easyprivacy.txt",
+    "https://secure.fanboy.co.nz/fanboy-cookiemonster.txt",
+]  ## Enable the ad/host blocker
 ## Type: Bool
-# c.content.blocking.enabled = True
+c.content.blocking.enabled = True
 
 ## Block subdomains of blocked hosts. Note: If only a single subdomain is
 ## blocked but should be allowed, consider using
@@ -766,7 +769,7 @@ c.colors.webpage.darkmode.enabled = True
 ##   - adblock: Use Brave's ABP-style adblocker
 ##   - hosts: Use hosts blocking
 ##   - both: Use both hosts blocking and Brave's ABP-style adblocker
-c.content.blocking.method = 'both'
+c.content.blocking.method = "both"
 
 ## A list of patterns that should always be loaded, despite being blocked
 ## by the ad-/host-blocker. Local domains are always exempt from
@@ -807,6 +810,7 @@ c.content.blocking.method = 'both'
 ## is applied.
 ## Type: Bool
 # c.content.canvas_reading = True
+c.content.canvas_reading = False
 
 ## Which cookies to accept. With QtWebEngine, this setting also controls
 ## other features with tracking capabilities similar to those of cookies;
@@ -830,7 +834,7 @@ c.content.blocking.method = 'both'
 ##   - no-3rdparty: Accept cookies from the same origin only. This is known to break some sites, such as GMail.
 ##   - no-unknown-3rdparty: Accept cookies from the same origin only, unless a cookie is already set for the domain. On QtWebEngine, this is the same as no-3rdparty.
 ##   - never: Don't accept cookies at all.
-c.content.cookies.accept = 'no-3rdparty'
+c.content.cookies.accept = "no-3rdparty"
 
 ## Store cookies.
 ## Type: Bool
@@ -847,7 +851,7 @@ c.content.cookies.accept = 'no-3rdparty'
 ##   - true
 ##   - false
 ##   - ask
-# c.content.desktop_capture = 'ask'
+c.content.desktop_capture = False
 
 ## Try to pre-fetch DNS entries to speed up browsing.
 ## Type: Bool
@@ -880,10 +884,14 @@ c.content.geolocation = False
 ## read from JavaScript is always the global value.
 ## Type: String
 # c.content.headers.accept_language = 'en-US,en;q=0.9'
+c.content.headers.accept_language = "en-US,en;q=0.5"
 
 ## Custom headers for qutebrowser HTTP requests.
 ## Type: Dict
-# c.content.headers.custom = {}
+c.content.headers.custom = {
+    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+    "Accept-Encoding": "gzip, deflate, br",
+}
 
 ## Value to send in the `DNT` header. When this is set to true,
 ## qutebrowser asks websites to not track your identity. If set to null,
@@ -901,7 +909,7 @@ c.content.headers.do_not_track = True
 ##   - always: Always send the Referer. With QtWebEngine 6.2+, this value is unavailable and will act like `same-domain`.
 ##   - never: Never send the Referer. This is not recommended, as some sites may break.
 ##   - same-domain: Only send the Referer for the same domain. This will still protect your privacy, but shouldn't break any sites. With QtWebEngine, the referer will still be sent for other domains, but with stripped path information.
-c.content.headers.referer = 'same-domain'
+c.content.headers.referer = "same-domain"
 
 ## User agent to send.  The following placeholders are defined:  *
 ## `{os_info}`: Something like "X11; Linux x86_64". * `{webkit_version}`:
@@ -918,7 +926,7 @@ c.content.headers.referer = 'same-domain'
 ## JavaScript requires a restart.
 ## Type: FormatString
 # c.content.headers.user_agent = 'Mozilla/5.0 ({os_info}) AppleWebKit/{webkit_version} (KHTML, like Gecko) {qt_key}/{qt_version} {upstream_browser_key}/{upstream_browser_version} Safari/{webkit_version}'
-c.content.headers.user_agent = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Safari/537.36'
+c.content.headers.user_agent = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
 
 ## Enable hyperlink auditing (`<a ping>`).
 ## Type: Bool
@@ -998,7 +1006,7 @@ c.content.javascript.clipboard = "access-paste"
 ## Use the standard JavaScript modal dialog for `alert()` and
 ## `confirm()`.
 ## Type: Bool
-# c.content.javascript.modal_dialog = False
+c.content.javascript.modal_dialog = False
 
 ## Show javascript prompts.
 ## Type: Bool
@@ -1022,7 +1030,7 @@ c.content.javascript.clipboard = "access-paste"
 ##   - true
 ##   - false
 ##   - ask
-c.content.media.audio_capture = False 
+c.content.media.audio_capture = False
 
 ## Allow websites to record audio and video.
 ## Type: BoolAsk
@@ -1064,7 +1072,7 @@ c.content.media.audio_video_capture = False
 ##   - true
 ##   - false
 ##   - ask
-# c.content.notifications.enabled = 'ask'
+c.content.notifications.enabled = False
 
 ## What notification presenter to use for web notifications. Note that
 ## not all implementations support all features of notifications: - The
@@ -1097,7 +1105,7 @@ c.content.media.audio_video_capture = False
 ## `:prompt-open-download --pdfjs` command (bound to `<Ctrl-p>` by
 ## default) can be used in the download prompt.
 ## Type: Bool
-c.content.pdfjs = False
+c.content.pdfjs = True
 
 ## Allow websites to request persistent storage quota via
 ## `navigator.webkitPersistentStorage.requestQuota`.
@@ -1110,7 +1118,7 @@ c.content.pdfjs = False
 
 ## Enable plugins in Web pages.
 ## Type: Bool
-# c.content.plugins = False
+c.content.plugins = False
 
 ## Request websites to minimize non-essentials animations and motion.
 ## This results in the `prefers-reduced-motion` CSS media query to
@@ -1122,7 +1130,7 @@ c.content.pdfjs = False
 
 ## Draw the background color and images also when the page is printed.
 ## Type: Bool
-# c.content.print_element_backgrounds = True
+c.content.print_element_backgrounds = False
 
 ## Open new windows in private browsing mode which does not record
 ## visited pages.
@@ -1205,7 +1213,7 @@ c.content.webgl = False
 ##   - default-public-and-private-interfaces: WebRTC should only use the default route used by http. This also exposes the associated default private address. Default route is the route chosen by the OS on a multi-homed endpoint.
 ##   - default-public-interface-only: WebRTC should only use the default route used by http. This doesn't expose any local addresses.
 ##   - disable-non-proxied-udp: WebRTC should only use TCP to contact peers or servers unless the proxy server supports UDP. This doesn't expose any local addresses either.
-c.content.webrtc_ip_handling_policy = 'disable-non-proxied-udp'
+c.content.webrtc_ip_handling_policy = "disable-non-proxied-udp"
 
 ## Monitor load requests for cross-site scripting attempts. Suspicious
 ## scripts will be blocked and reported in the devtools JavaScript
@@ -1260,7 +1268,7 @@ c.content.webrtc_ip_handling_policy = 'disable-non-proxied-udp'
 ## Duration (in milliseconds) to wait before removing finished downloads.
 ## If set to -1, downloads are never removed.
 ## Type: Int
-# c.downloads.remove_finished = -1
+c.downloads.remove_finished = 5000
 
 ## Editor (and arguments) to use for the `edit-*` commands. The following
 ## placeholders are defined:  * `{file}`: Filename of the file to be
@@ -1270,7 +1278,13 @@ c.content.webrtc_ip_handling_policy = 'disable-non-proxied-udp'
 ## Same as `{column}`, but starting from index 0.
 ## Type: ShellCommand
 # c.editor.command = ['gvim', '-f', '{file}', '-c', 'normal {line}G{column0}l']
-c.editor.command = ['kitty', '--class', 'nvim-editor', '/opt/nvim-linux64/bin/nvim', '{}']
+c.editor.command = [
+    "kitty",
+    "--class",
+    "nvim-editor",
+    "/opt/nvim-linux64/bin/nvim",
+    "{}",
+]
 ## Encoding to use for the editor.
 ## Type: Encoding
 # c.editor.encoding = 'utf-8'
@@ -1340,7 +1354,7 @@ c.fonts.web.size.default = 16  # Set default font size
 c.fonts.web.size.default_fixed = 14  # Set default font size for fixed-width fonts
 
 # Bind to quickly toggle a user stylesheet (optional)
-config.bind('user-stylesheet', '~/.config/qutebrowser/custom.css')
+config.bind("user-stylesheet", "~/.config/qutebrowser/custom.css")
 
 # Combine all stylesheets into one list
 c.content.user_stylesheets = [
@@ -1951,7 +1965,7 @@ c.qt.workarounds.disable_hangouts_extension = True
 ##   - always: Always show the statusbar.
 ##   - never: Always hide the statusbar.
 ##   - in-mode: Show the statusbar when in modes other than normal mode.
-c.statusbar.show = 'never'
+c.statusbar.show = "never"
 
 ## List of widgets displayed in the statusbar.
 ## Type: List of StatusbarWidget
@@ -1966,7 +1980,15 @@ c.statusbar.show = 'never'
 ##   - progress: Progress bar for the current page loading.
 ##   - text:foo: Display the static text after the colon, `foo` in the example.
 ##   - clock: Display current time. The format can be changed by adding a format string via `clock:...`. For supported format strings, see https://docs.python.org/3/library/datetime.html#strftime-and-strptime-format-codes[the Python datetime documentation].
-c.statusbar.widgets = ['keypress', 'search_match', 'url', 'scroll', 'history', 'tabs', 'progress']
+c.statusbar.widgets = [
+    "keypress",
+    "search_match",
+    "url",
+    "scroll",
+    "history",
+    "tabs",
+    "progress",
+]
 
 ## Open new tabs (middleclick/ctrl+click) in the background.
 ## Type: Bool
@@ -2117,7 +2139,7 @@ c.statusbar.widgets = ['keypress', 'search_match', 'url', 'scroll', 'history', '
 ##   - never: Always hide the tab bar.
 ##   - multiple: Hide the tab bar if only one tab is open.
 ##   - switching: Show the tab bar when switching tabs.
-c.tabs.show = 'never'
+c.tabs.show = "never"
 
 ## Duration (in milliseconds) to show the tab bar before hiding it when
 ## tabs.show is set to 'switching'.
@@ -2235,7 +2257,10 @@ c.tabs.show = 'never'
 ## qutebrowser`.
 ## Type: Dict
 # c.url.searchengines = {'DEFAULT': 'https://duckduckgo.com/?q={}'}
-
+c.url.searchengines = {
+    "DEFAULT": "https://duckduckgo.com/?q={}",
+    "wa": "https://wiki.archlinux.org/?search={}",
+}
 ## Page(s) to open at the start.
 ## Type: List of FuzzyUrl, or FuzzyUrl
 # c.url.start_pages = ["https://homepage.mischavandenburg.net"]
@@ -2281,9 +2306,12 @@ c.window.hide_decoration = True
 
 ## Bindings for normal mode
 
-config.bind('xb', 'config-cycle statusbar.show always never')
-config.bind('xt', 'config-cycle tabs.show always never')
-config.bind('xx', 'config-cycle statusbar.show always never;; config-cycle tabs.show always never')
+config.bind("xb", "config-cycle statusbar.show always never")
+config.bind("xt", "config-cycle tabs.show always never")
+config.bind(
+    "xx",
+    "config-cycle statusbar.show always never;; config-cycle tabs.show always never",
+)
 
 # config.bind("'", 'mode-enter jump_mark')
 # config.bind('+', 'zoom-in')
@@ -2340,7 +2368,7 @@ config.bind('xx', 'config-cycle statusbar.show always never;; config-cycle tabs.
 # config.bind('<Ctrl-p>', 'tab-pin')
 # config.bind('<Ctrl-s>', 'stop')
 # config.bind('<Escape>', 'clear-keychain ;; search ;; fullscreen --leave')
-config.bind('<Ctrl+Shift+f>', 'fullscreen')
+config.bind("<Ctrl+Shift+f>", "fullscreen")
 # config.bind('<F5>', 'reload')
 # config.bind('<Return>', 'selection-follow')
 # config.bind('<back>', 'back')
