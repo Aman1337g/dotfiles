@@ -23,13 +23,9 @@ map("n", "<leader>s", "<cmd>LspStart<CR>", { desc = "LspStart" })
 map("n", "<leader>fs", "<cmd>Telescope symbols<CR>", { desc = "Find Symbols" })
 
 -- markdown preview in qutebrowser
-map("n", "<leader>mp", function()
-  -- Start MarkdownPreview in the background
-  vim.fn.jobstart "MarkdownPreview"
+map("n", "<leader>mp", "<cmd>MarkdownPreview<CR>", { desc = " markdownpreview in qutebrowser" })
 
-  -- Use vim.defer_fn to delay qutebrowser opening
-  vim.defer_fn(function()
-    -- After 2 seconds, open qutebrowser
-    vim.fn.jobstart "/home/aman/qutebrowser/.venv/bin/python3 -m qutebrowser http://localhost:8177"
-  end, 2000) -- 2000 milliseconds = 2 seconds
-end, { noremap = true, silent = true, desc = "markdown preview in qutebrowser" })
+-- lua code execution
+map("n", "<space><space>x", "<cmd>source %<CR>", { desc = "Executing lua code" })
+map("n", "<space>l", "<cmd>:.lua<CR>", { desc = "Executing single lua line code" })
+map("v", "<space>l", ":lua<CR>", { desc = "Executing selected lua code" })

@@ -1,0 +1,95 @@
+#!/bin/bash
+set -e
+
+# Function to get latest release version from GitHub
+get_latest_version() {
+    curl -s https://api.github.com/repos/junegunn/fzf/releases/latest | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/'
+}
+
+# Function to get currently installed version
+get_current_version() {
+    if command -v fzf >/dev/null 2>&1; then
+        # Add 'v' prefix to match GitHub release format
+        echo "v$(fzf --version | cut -d ' ' -f 1)"
+    else
+        echo "not_installed"
+    fi
+}
+
+# Function to download and install fzf
+install_fzf() {
+    local version=$1
+    # Remove 'v' prefix for the download URL
+    local version_no_v=${version#v}
+    local os=$(uname -s | tr '[:upper:]' '[:lower:]')
+    local arch=$(uname -m)
+    local filename=""
+    
+    # Map architecture names
+    case "${arch}" in
+        x86_64)
+            arch="amd64"
+            ;;
+        aarch64|arm64)
+            arch="arm64"
+            ;;
+        *)
+            echo "Unsupported architecture: ${arch}"
+            exit 1
+            ;;
+    esac
+    
+    # Create temp directory
+    local tmp_dir=$(mktemp -d)
+    cd "${tmp_dir}"
+    
+    # Download appropriate binary
+    filename="fzf-${version_no_v}-${os}_${arch}.tar.gz"
+    echo "Downloading ${filename}..."
+    curl -LO "https://github.com/junegunn/fzf/releases/download/${version}/${filename}"
+    
+    # Extract and install
+    tar xzf "${filename}"
+    
+    # Create bin directory if it doesn't exist
+    mkdir -p "$HOME/.local/bin"
+    
+    # Install fzf binary
+    mv fzf "$HOME/.local/bin/"
+    chmod +x "$HOME/.local/bin/fzf"
+    
+    # Clean up
+    cd - >/dev/null
+    rm -rf "${tmp_dir}"
+    
+    echo "FZF ${version} installed successfully to $HOME/.local/bin/fzf"
+    
+    # Add to PATH if not already present
+    if [[ ":$PATH:" != *":$HOME/.local/bin:"* ]]; then
+        echo "Adding $HOME/.local/bin to PATH in your shell profile..."
+        echo 'export PATH="$HOME/.local/bin:$PATH"' >> "$HOME/.bashrc"
+        echo "Please restart your shell or run: source $HOME/.bashrc"
+    fi
+}
+
+main() {
+    echo "Checking for fzf..."
+    
+    CURRENT_VERSION=$(get_current_version)
+    LATEST_VERSION=$(get_latest_version)
+    
+    echo "Current version: ${CURRENT_VERSION}"
+    echo "Latest version: ${LATEST_VERSION}"
+    
+    if [ "$CURRENT_VERSION" = "not_installed" ]; then
+        echo "FZF is not installed. Installing version ${LATEST_VERSION}..."
+        install_fzf "${LATEST_VERSION}"
+    elif [ "$CURRENT_VERSION" != "$LATEST_VERSION" ]; then
+        echo "Upgrading FZF..."
+        install_fzf "${LATEST_VERSION}"
+    else
+        echo "FZF is already up to date!"
+    fi
+}
+
+main

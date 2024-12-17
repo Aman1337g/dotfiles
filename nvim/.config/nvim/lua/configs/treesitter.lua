@@ -4,6 +4,7 @@ local options = {
     "markdown",
     "cpp",
     "c",
+    "javascript",
     "make",
     "cmake",
     "lua",

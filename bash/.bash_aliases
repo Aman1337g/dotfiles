@@ -59,8 +59,10 @@ alias da='date'                         # date and time
 crp() {
     realpath "$1" | xclip -selection clipboard
 }
-alias zinstall='curl -sSfL https://raw.githubusercontent.com/ajeetdsouza/zoxide/main/install.sh | sh'  # installing latest zoxide binary in ~/.local/bin/ 
+alias iuz='curl -sSfL https://raw.githubusercontent.com/ajeetdsouza/zoxide/main/install.sh | sh'  # installing latest zoxide binary in ~/.local/bin/ 
 alias favset='dconf write /org/gnome/shell/favorite-apps "['\''brave-browser.desktop'\'', '\''google-chrome.desktop'\'', '\''code.desktop'\'', '\''libreoffice-writer.desktop'\'', '\''org.gnome.Nautilus.desktop'\'']"'
+alias o='open'
+
 
 # Neovim commands
 alias v='/opt/nvim-linux64/bin/nvim'
@@ -87,7 +89,7 @@ alias cat='bat'
 
 
 # fuzzy finding
-alias ff='fzf --preview="batcat --color=always {}"'
+alias ff='fzf --preview="bat --color=always {}"'
 
 
 # Copy commands
