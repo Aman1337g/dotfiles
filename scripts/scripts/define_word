@@ -1,0 +1,35 @@
+#!/bin/bash
+
+# Get the selected word from the clipboard
+word=$(xclip -o -selection primary)
+
+# Validate input
+if [ -z "$word" ]; then
+    notify-send -t 3000 "Error" "No word selected." -h int:transient:1
+    exit 1
+fi
+
+# Fetch the dictionary API response
+query=$(curl -s "https://api.dictionaryapi.dev/api/v2/entries/en/$word")
+
+# Check if the query returned valid data
+if [ -z "$query" ] || echo "$query" | grep -q "No Definitions Found"; then
+    notify-send -t 3000 "Error" "Invalid word: '$word'." -h int:transient:1
+    exit 1
+fi
+
+# Extract definitions with part of speech
+definitions=$(echo "$query" | jq -r '[.[].meanings[] | {pos: .partOfSpeech, def: .definitions[].definition}] | .[:5] | to_entries[] | "\(.value.pos): \(.value.def)"')
+
+# Handle cases where definitions are missing
+if [ -z "$definitions" ]; then
+    notify-send -t 3000 "Error" "No definitions found for '$word'." -h int:transient:1
+    exit 1
+fi
+
+# Display full definitions in a scrollable window
+echo "$definitions" | zenity --text-info \
+    --title="Definition of $word" \
+    --width=800 \
+    --height=400 \
+    --font="JetBrainsMono Nerd Font 12"
