@@ -1,0 +1,55 @@
+#!/bin/bash
+
+# Fetch quote from ZenQuotes API with timeout and error handling
+fetch_quote() {
+    if ! command -v curl >/dev/null 2>&1; then
+        zenity --error --text="Error: curl is required but not installed"
+        exit 1
+    fi
+
+    if ! command -v jq >/dev/null 2>&1; then
+        zenity --error --text="Error: jq is required but not installed"
+        exit 1
+    fi
+
+    # Fetch the quote
+    local quote_response
+    quote_response=$(curl -s --max-time 5 https://zenquotes.io/api/random)
+
+    # Check if the API request was successful
+    if [[ $? -ne 0 ]]; then
+        zenity --error --text="Error: Failed to fetch quote from API"
+        exit 1
+    fi
+
+    # Validate JSON response
+    if ! echo "$quote_response" | jq empty >/dev/null 2>&1; then
+        zenity --error --text="Error: Invalid JSON response from API"
+        exit 1
+    fi
+
+    # Extract quote and author
+    quote=$(echo "$quote_response" | jq -r '.[0].q')
+    author=$(echo "$quote_response" | jq -r '.[0].a')
+
+    # Check if quote or author is empty/null
+    if [[ -z "$quote" || "$quote" == "null" ]]; then
+        zenity --error --text="Error: Failed to parse quote text"
+        exit 1
+    fi
+
+    if [[ -z "$author" || "$author" == "null" ]]; then
+        author="Unknown"
+    fi
+}
+
+# Main execution
+
+# Fetch the quote
+fetch_quote
+
+# Combine quote and author for display with supported formatting
+display_message="<span size='x-large'><b>$quote</b>\n\n<i>- $author</i></span>"
+
+# Show the quote in a Zenity dialog with HTML formatting
+zenity --info --width=500 --height=200 --text="<markup>$display_message</markup>"
