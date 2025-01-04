@@ -29,3 +29,4 @@ export PATH=/home/aman/.nvm/versions/node/v20.13.1/bin:/home/aman/.local/bin:/us
 export PYENV_ROOT="$HOME/.pyenv"
 command -v pyenv >/dev/null || export PATH="$PYENV_ROOT/bin:$PATH"
 eval "$(pyenv init -)"
+. "$HOME/.cargo/env"

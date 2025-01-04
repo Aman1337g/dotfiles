@@ -11,7 +11,8 @@ alias .....='cd ../../../..'
 
 
 # Git aliases
-alias aup='git add -u'
+alias a='git add'
+alias au='git add -u'
 alias a.='git add .'
 alias br='git branch'
 alias co='git checkout'
@@ -225,7 +226,7 @@ alias tks='tmux kill-server'
 
 
 # Docker aliases
-alias d='docker'
+alias dk='docker'
 alias dps='docker ps'
 alias dpsa='docker ps -a'
 alias dimages='docker images'

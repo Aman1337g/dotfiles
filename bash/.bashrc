@@ -43,8 +43,8 @@ export XDG_STATE_HOME="$HOME/.local/state"
 export XDG_CACHE_HOME="$HOME/.cache"
 
 # Set the default editor
-export EDITOR=nvim
-export VISUAL=nvim
+export EDITOR=/opt/nvim-linux64/bin/nvim
+export VISUAL=/opt/nvim-linux64/bin/nvim
 
 # Note: bind used instead of sticking these in .inputrc
 if [[ $- == *i* ]]; then
@@ -110,7 +110,24 @@ eval "$(fzf --bash)"
 
 ### SETTING THE STARSHIP PROMPT ###
 eval "$(starship init bash)"
+
+# ---- Zoxide (better cd) ----
 eval "$(zoxide init --cmd cd bash)"
+
+# ---- settng up pyenv for managing python versions ----
 export PYENV_ROOT="$HOME/.pyenv"
 command -v pyenv >/dev/null || export PATH="$PYENV_ROOT/bin:$PATH"
 eval "$(pyenv init -)"
+
+# ---- setting up cargo path ----
+. "$HOME/.cargo/env"
+
+# ---- Yazi setup ----
+function z() {
+	local tmp="$(mktemp -t "yazi-cwd.XXXXXX")" cwd
+	yazi "$@" --cwd-file="$tmp"
+	if cwd="$(command cat -- "$tmp")" && [ -n "$cwd" ] && [ "$cwd" != "$PWD" ]; then
+		builtin cd -- "$cwd"
+	fi
+	rm -f -- "$tmp"
+}
