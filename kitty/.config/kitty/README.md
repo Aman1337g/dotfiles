@@ -45,8 +45,8 @@ press `ctrl` + `a` in the same time, release and then, press R (`shift`+`r`)
 | --------------------------------------------- | ------------------ |
 | <kbd>ctrl</kbd>+<kbd>shift</kbd>+<kbd>←</kbd> | goto previous tab        |
 | <kbd>ctrl</kbd>+<kbd>shift</kbd>+<kbd>→</kbd> | goto next tab           |
-| <kbd>ctrl</kbd>+<kbd>shift</kbd>+<kbd>[</kbd> | goto previous tab        |
-| <kbd>ctrl</kbd>+<kbd>shift</kbd>+<kbd>]</kbd> | goto next tab           |
+| <kbd>ctrl</kbd>+<kbd>shift</kbd>+<kbd>k</kbd> | goto previous tab        |
+| <kbd>ctrl</kbd>+<kbd>shift</kbd>+<kbd>j</kbd> | goto next tab           |
 | <kbd>ctrl</kbd>+<kbd>shift</kbd>+<kbd>,</kbd> | move tab backward  |
 | <kbd>ctrl</kbd>+<kbd>shift</kbd>+<kbd>.</kbd> | move tab forward   |
 | <kbd>ctrl</kbd>+<kbd>a</kbd>><kbd>,</kbd>     | change tab title   |

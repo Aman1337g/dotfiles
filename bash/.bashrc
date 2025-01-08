@@ -115,9 +115,9 @@ eval "$(starship init bash)"
 eval "$(zoxide init --cmd cd bash)"
 
 # ---- settng up pyenv for managing python versions ----
-export PYENV_ROOT="$HOME/.pyenv"
-command -v pyenv >/dev/null || export PATH="$PYENV_ROOT/bin:$PATH"
-eval "$(pyenv init -)"
+# export PYENV_ROOT="$HOME/.pyenv"
+# command -v pyenv >/dev/null || export PATH="$PYENV_ROOT/bin:$PATH"
+# eval "$(pyenv init -)"
 
 # ---- setting up cargo path ----
 . "$HOME/.cargo/env"

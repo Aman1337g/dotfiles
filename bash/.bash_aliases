@@ -65,11 +65,17 @@ alias favset='dconf write /org/gnome/shell/favorite-apps "['\''brave-browser.des
 alias o='open'
 
 
+# dconf dumping commands
+alias dmk='dconf dump /org/gnome/settings-daemon/plugins/media-keys/ > /home/aman/.dotfiles/debian-keybindings.ini'
+alias dwmk='dconf dump /org/gnome/desktop/wm/keybindings/ > /home/aman/.dotfiles/debian-wm-keybindings.ini'
+
+
 # Neovim commands
 alias v='/opt/nvim-linux64/bin/nvim'
 sv() {
     sudo -E /opt/nvim-linux64/bin/nvim "$@"
 }
+
 
 # Syncthing
 alias ms='syncthing --no-browser'  # mind sync
@@ -86,7 +92,7 @@ alias permit='sudo chown -R aman:aman'
 
 
 # Nicer cat
-alias cat='bat'
+alias cat='batcat'
 
 
 # fuzzy finding
