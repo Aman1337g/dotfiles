@@ -735,7 +735,7 @@ c.content.autoplay = False
 c.content.blocking.adblock.lists = [  # Add more blocklists
     "https://easylist.to/easylist/easylist.txt",
     "https://easylist.to/easylist/easyprivacy.txt",
-    "https://secure.fanboy.co.nz/fanboy-annoyance.txt",
+    # "https://secure.fanboy.co.nz/fanboy-annoyance.txt",
 ]  ## Enable the ad/host blocker
 ## Type: Bool
 c.content.blocking.enabled = True
@@ -756,9 +756,9 @@ c.content.blocking.enabled = True
 ## lists.  The file `~/.config/qutebrowser/blocked-hosts` is always read
 ## if it exists.
 ## Type: List of Url
-c.content.blocking.hosts.lists = [
-    'https://raw.githubusercontent.com/StevenBlack/hosts/master/hosts'
-]
+# c.content.blocking.hosts.lists = [
+#     'https://raw.githubusercontent.com/StevenBlack/hosts/master/hosts'
+# ]
 
 ## Which method of blocking ads should be used.  Support for Adblock Plus
 ## (ABP) syntax blocklists using Brave's Rust library requires the
@@ -771,7 +771,7 @@ c.content.blocking.hosts.lists = [
 ##   - adblock: Use Brave's ABP-style adblocker
 ##   - hosts: Use hosts blocking
 ##   - both: Use both hosts blocking and Brave's ABP-style adblocker
-c.content.blocking.method = "both"
+# c.content.blocking.method = "both"
 
 ## A list of patterns that should always be loaded, despite being blocked
 ## by the ad-/host-blocker. Local domains are always exempt from
@@ -2626,3 +2626,5 @@ config.bind("<Ctrl+Shift+f>", "fullscreen")
 # config.bind('Y', 'prompt-accept --save yes', mode='yesno')
 # config.bind('n', 'prompt-accept no', mode='yesno')
 # config.bind('y', 'prompt-accept yes', mode='yesno')
+
+config.source('nord.py')

@@ -108,6 +108,22 @@ press `ctrl` + `a` in the same time, release and then, press R (`shift`+`r`)
 | <kbd>ctrl</kbd>+<kbd>a</kbd>><kbd>space</kbd>             | copy pasting with hints like [tmux-thumbs](https://github.com/fcsonline/tmux-thumbs) |
 | <kbd>ctrl</kbd>+<kbd>a</kbd>><kbd>ctrl</kbd>+<kbd>a</kbd> | send real <kbd>ctrl</kbd>+<kbd>a</kbd> (emacs shortcut <kbd>Home</kbd>)              |
 
+### clipboard
+
+| key                                                       | description                                                                          |
+| --------------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| <kbd>ctrl</kbd>+<kbd>v</kbd>                                    | paste from clipboard                                                                        |
+| <kbd>ctrl</kbd>+<kbd>shift</kbd>+<kbd>s</kbd>             | paste from selection |
+| <kbd>ctrl</kbd>+<kbd>space</kbd>                                | copy to clipboard              |
+
+### scrolling 
+
+| key                                                       | description                                                                          |
+| --------------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| <kbd>ctrl</kbd>+<kbd>k</kbd>                                   | scroll line up                                                                        |
+| <kbd>ctrl</kbd>+<kbd>j</kbd>                                   | scroll line down |
+
+
 ## session restore
 
 > if you have used <kbd>ctrl</kbd>+<kbd>a</kbd>><kbd>s</kbd> generate the session, you do not need this.
