@@ -66,8 +66,16 @@ alias o='open'
 
 
 # dconf dumping commands
-alias dmk='dconf dump /org/gnome/settings-daemon/plugins/media-keys/ > /home/aman/.dotfiles/debian-keybindings.ini'
+alias dmk='dconf dump /org/gnome/settings-daemon/plugins/media-keys/ > /home/aman/.dotfiles/debian-custom-keybindings.ini'
 alias dwmk='dconf dump /org/gnome/desktop/wm/keybindings/ > /home/aman/.dotfiles/debian-wm-keybindings.ini'
+
+
+# ddterm
+alias dt='com.github.amezin.ddterm'
+
+
+# fastfetch
+alias ff='fastfetch'
 
 
 # Neovim commands
@@ -96,7 +104,7 @@ alias cat='batcat'
 
 
 # fuzzy finding
-alias ff='fzf --preview="bat --color=always {}"'
+alias fp='fzf --preview="bat --color=always {}"'
 
 
 # Copy commands
@@ -222,13 +230,13 @@ ipaddr() {
 }
 
 
-# Tmux aliases
-alias t='tmux'
-alias tls='tmux ls'
-alias ta='tmux attach -t'
-alias tnew='tmux new -s'
-alias tkill='tmux kill-session -t'
-alias tks='tmux kill-server'
+# # Tmux aliases
+# alias t='tmux'
+# alias tls='tmux ls'
+# alias ta='tmux attach -t'
+# alias tnew='tmux new -s'
+# alias tkill='tmux kill-session -t'
+# alias tks='tmux kill-server'
 
 
 # Docker aliases
@@ -246,6 +254,7 @@ alias dcompose='docker-compose'
 # Python aliases
 alias p='python'
 alias vc="python -m virtualenv"
+alias venv="python -m venv"
 
 
 # Kitty aliases
