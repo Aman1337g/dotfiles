@@ -1,31 +1,32 @@
 require "nvchad.mappings"
 
--- add yours here
-
+-- Add your custom mappings here
 local map = vim.keymap.set
 
+-- General
 map("n", ";", ":", { desc = "CMD enter command mode" })
-map("i", "jk", "<ESC>")
+map("i", "jk", "<ESC>", { desc = "Exit insert mode" })
+map({ "n", "i", "v" }, "<C-s>", "<cmd>w<CR>", { desc = "Save file", silent = true })
 
-map({ "n", "i", "v" }, "<C-s>", "<cmd> w <cr>")
+-- Terminal mode
+map("t", "<Esc>", [[<C-\><C-n>]], { desc = "Escape Terminal mode", silent = true })
 
--- Custom keymappings
+-- Autocompletion
+map("n", "<leader>p", '<cmd>lua require("cmp").setup { enabled = true }<CR>', { desc = "Enable completion" })
+map("n", "<leader>P", '<cmd>lua require("cmp").setup { enabled = false }<CR>', { desc = "Disable completion" })
 
--- autocompletion
-map("n", "<leader>p", '<cmd>lua require("cmp").setup { enabled = true }<cr>', { desc = "Enable completion" })
+-- LSP
+map("n", "<leader>s", "<cmd>LspStart<CR>", { desc = "Start LSP", silent = true })
+map("n", "<leader>S", "<cmd>LspStop<CR>", { desc = "Stop LSP", silent = true })
 
-map("n", "<leader>P", '<cmd>lua require("cmp").setup { enabled = false }<cr>', { desc = "Disable completion" })
--- lsp
-map("n", "<leader>S", "<cmd>LspStop<CR>", { desc = "LspStop" })
-map("n", "<leader>s", "<cmd>LspStart<CR>", { desc = "LspStart" })
+-- Telescope
+map("n", "<leader>fs", "<cmd>Telescope symbols<CR>", { desc = "Find Symbols", silent = true })
 
--- telescope symbols
-map("n", "<leader>fs", "<cmd>Telescope symbols<CR>", { desc = "Find Symbols" })
+-- Markdown Preview
+map("n", "<leader>mp", "<cmd>MarkdownPreview<CR>", { desc = " Preview Markdown in qutebrowser", silent = true })
 
--- markdown preview in qutebrowser
-map("n", "<leader>mp", "<cmd>MarkdownPreview<CR>", { desc = " markdownpreview in qutebrowser" })
+-- Lua code execution
+map("n", "<space><space>x", "<cmd>source %<CR>", { desc = "Execute Lua code in current file", silent = true })
+map("n", "<space>l", ":lua ", { desc = "Execute Lua line interactively" })
+map("v", "<space>l", ":lua<CR>", { desc = "Execute selected Lua code", silent = true })
 
--- lua code execution
-map("n", "<space><space>x", "<cmd>source %<CR>", { desc = "Executing lua code" })
-map("n", "<space>l", "<cmd>:.lua<CR>", { desc = "Executing single lua line code" })
-map("v", "<space>l", ":lua<CR>", { desc = "Executing selected lua code" })

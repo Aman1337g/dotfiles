@@ -27,17 +27,13 @@
       "format": "{#1}│"
     },
     // System Information
-   {
+    {
       "type": "os",
       "key": "{#separator}│  {#keys}󰍹 OS"
     },
     {
       "type": "kernel",
       "key": "{#separator}│  {#keys}󰒋 Kernel"
-    },
-    {
-      "type": "uptime",
-      "key": "{#separator}│  {#keys}󰅐 Uptime"
     },
     {
       "type": "packages",
@@ -49,7 +45,7 @@
       "format": "{#1}│"
     },
     // Desktop Environment
-   {
+    {
       "type": "de",
       "key": "{#separator}│  {#keys}󰧨 DE"
     },
@@ -83,7 +79,7 @@
       "format": "{#1}│"
     },
     // Hardware Information
-   {
+    {
       "type": "cpu",
       "key": "{#separator}│  {#keys}󰻠 CPU"
     },
@@ -107,13 +103,13 @@
     // OS age and uptime Information 
     {
       "type": "command",
-      "key": "{#separator}│ {#keys} OS Age ",
+      "key": "{#separator}│  {#keys} OS Age ",
       "keyColor": "magenta",
       "text": "birth_install=$(stat -c %W /); current=$(date +%s); time_progression=$((current - birth_install)); days_difference=$((time_progression / 86400)); echo $days_difference days"
     },
     {
       "type": "uptime",
-      "key": "{#separator}│ {#keys} Uptime ",
+      "key": "{#separator}│  {#keys}󰅐 Uptime ",
       "keyColor": "magenta"
     },
     {

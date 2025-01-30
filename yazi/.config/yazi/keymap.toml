@@ -131,6 +131,7 @@ keymap = [
 	{ on = [ "g", "<Space>" ], run = "cd --interactive", desc = "Jump interactively" },
   { on = [ "g", "m" ],       run = "cd /media/aman/DATA",  desc = "Jump to E drive"},
   { on = [ "g", "f" ],       run = "cd /run/user/1000/gvfs/mtp:host=motorola_moto_g_40__fusion_ZD2222NLDG/Internal shared storage", desc = "Jump to Moto G40 Fusion"},
+  { on = [ "g", "z" ],       run = "cd /home/aman/Desktop/GitHub/The\\ Garden/Zettelkasten", desc = "Go to Zettelkasten" },
 
 	# Tabs
 	{ on = "t", run = "tab_create --current", desc = "Create a new tab with CWD" },
