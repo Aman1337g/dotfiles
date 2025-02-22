@@ -253,7 +253,8 @@ alias dcompose='docker-compose'
 
 # Python aliases
 alias p='python'
-alias vc="python -m virtualenv"
+# alias vc="python -m virtualenv"
+alias vc='python -m venv'
 alias venv="python -m venv"
 
 

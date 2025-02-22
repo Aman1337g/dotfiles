@@ -18,6 +18,7 @@ local default_servers = {
   "eslint",
   "pyright",
   "marksman",
+  "ts_ls",
 }
 
 -- lsps with default config
