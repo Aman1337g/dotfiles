@@ -2,9 +2,9 @@
   "$schema": "https://github.com/fastfetch-cli/fastfetch/raw/dev/doc/json_schema.json",
   "logo": {
     "padding": {
-      "top": 3,
+      "top": 2,
       "left": 1,
-      "right": 2
+      "right": 3
     },
     "type": "builtin",
     "color": {
@@ -14,13 +14,17 @@
   },
   "display": {
     "separator": "  ",
-    "color": "cyan"
+    "color": "cyan",
+    "size": {
+      "binaryPrefix": "si"
+    }
+//   "precisionTemp": 0
   },
   "modules": [ 
-    // Title
+    // Title with hostname
     {
       "type": "title",
-      "format": "{#1}╭───────────── {#}{user-name-colored}"
+      "format": "{#1}╭───────────── {#}{user-name-colored}@{host-name-colored}"
     },
     {
       "type": "custom",
@@ -29,16 +33,19 @@
     // System Information
     {
       "type": "os",
-      "key": "{#separator}│  {#keys}󰍹 OS"
+      "key": "{#separator}│  {#keys}󰍹 OS",
+      "format": "{pretty-name}"
     },
     {
       "type": "kernel",
-      "key": "{#separator}│  {#keys}󰒋 Kernel"
+      "key": "{#separator}│  {#keys}󰒋 Kernel",
+      "format": "{sysname} {release}"
     },
     {
       "type": "packages",
       "key": "{#separator}│  {#keys}󰏖 Packages",
-      "format": "{all}"
+      "format": "{all}",
+      "packageManagers": ["flatpak", "pacman", "apt", "dnf", "rpm"]
     },
     {
       "type": "custom",
@@ -59,16 +66,18 @@
     },
     {
       "type": "display",
-      "key": "{#separator}│  {#keys}󰹑 Resolution"
+      "key": "{#separator}│  {#keys}󰹑 Resolution",
+      "format": "{width}x{height} @ {refresh-rate}Hz"
     },
     {
       "type": "shell",
-      "key": "{#separator}│  {#keys}󰞷 Shell"
+      "key": "{#separator}│  {#keys}󰞷 Shell",
+      "format": "{pretty-name} {version}"
     },
     {
       "type": "command",
-      "text": "$EDITOR --version | head -1",
-      "key": "{#separator}│  {#keys} Editor"
+      "text": "$EDITOR --version | head -1 | sed 's/ built.*//'",
+      "key": "{#separator}│  {#keys}  Editor"
     },
     {
       "type": "terminalfont",
@@ -78,39 +87,53 @@
       "type": "custom",
       "format": "{#1}│"
     },
-    // Hardware Information
+    // Hardware Information with better formatting
     {
       "type": "cpu",
-      "key": "{#separator}│  {#keys}󰻠 CPU"
+      "key": "{#separator}│  {#keys}󰻠 CPU",
+      "format": "{name} [{temperature}]",
+      "temp": true
     },
     {
       "type": "gpu",
-      "key": "{#separator}│  {#keys}󰢮 GPU"
+      "key": "{#separator}│  {#keys}󰢮 GPU",
+      "format": "{name} [{type}]"
     },
     {
       "type": "memory",
-      "key": "{#separator}│  {#keys}󰍛 Memory"
+      "key": "{#separator}│  {#keys}󰍛 Memory",
+      "format": "{used}/{total} ({percentage})"
     },
     {
       "type": "disk",
       "key": "{#separator}│  {#keys}󰋊 Disk (/)",
-      "folders": "/"
+      "folders": "/",
+      "format": "{size-used}/{size-total} ({size-percentage})"
+    },
+    {
+      "type": "battery",
+      "key": "{#separator}│  {#keys}󰁹 Battery",
+      "format": "{capacity} [{status}]",
+      "temp": true
     },
     {
       "type": "custom",
       "format": "{#1}│"
     },
-    // OS age and uptime Information 
+    // System Performance
     {
       "type": "command",
       "key": "{#separator}│  {#keys} OS Age ",
-      "keyColor": "magenta",
       "text": "birth_install=$(stat -c %W /); current=$(date +%s); time_progression=$((current - birth_install)); days_difference=$((time_progression / 86400)); echo $days_difference days"
     },
     {
       "type": "uptime",
       "key": "{#separator}│  {#keys}󰅐 Uptime ",
-      "keyColor": "magenta"
+      "format": "{days}d {hours}h {minutes}m"
+    },
+    {
+      "type": "cpuusage",
+      "key": "{#separator}│  {#keys}󰓅 CPU Usage "
     },
     {
       "type": "custom",
