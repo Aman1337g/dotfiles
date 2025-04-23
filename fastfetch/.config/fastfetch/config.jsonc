@@ -113,8 +113,7 @@
     {
       "type": "battery",
       "key": "{#separator}│  {#keys}󰁹 Battery",
-      "format": "{capacity} [{status}]",
-      "temp": true
+      "format": "{capacity} [{status}]"
     },
     {
       "type": "custom",
@@ -130,10 +129,6 @@
       "type": "uptime",
       "key": "{#separator}│  {#keys}󰅐 Uptime ",
       "format": "{days}d {hours}h {minutes}m"
-    },
-    {
-      "type": "cpuusage",
-      "key": "{#separator}│  {#keys}󰓅 CPU Usage "
     },
     {
       "type": "custom",

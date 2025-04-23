@@ -63,6 +63,9 @@ crp() {
 alias iuz='curl -sSfL https://raw.githubusercontent.com/ajeetdsouza/zoxide/main/install.sh | sh'  # installing latest zoxide binary in ~/.local/bin/ 
 alias favset='dconf write /org/gnome/shell/favorite-apps "['\''brave-browser.desktop'\'', '\''google-chrome.desktop'\'', '\''code.desktop'\'', '\''libreoffice-writer.desktop'\'', '\''org.gnome.Nautilus.desktop'\'']"'
 alias o='open'
+alias dp='apt rdepends --installed'
+alias l='light -S'
+alias m='mocp'
 
 
 # dconf dumping commands
@@ -79,9 +82,9 @@ alias ff='fastfetch'
 
 
 # Neovim commands
-alias v='/opt/nvim-linux64/bin/nvim'
+alias v='/opt/nvim-linux-x86_64/bin/nvim'
 sv() {
-    sudo -E /opt/nvim-linux64/bin/nvim "$@"
+    sudo -E /opt/nvim-linux-x86_64/bin/nvim "$@"
 }
 
 

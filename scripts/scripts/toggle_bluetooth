@@ -1,0 +1,9 @@
+#!/bin/bash
+
+if [ "$(bluetooth | awk -F" " '{print $3}')" = "off" ]; then
+  bluetooth on
+  notify-send -t 3000 "Bluetooth enabled" -h int:transient:1
+else
+  bluetooth off
+  notify-send -t 3000 "Bluetooth disabled" -h int:transient:1
+fi
