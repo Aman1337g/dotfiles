@@ -1,0 +1,300 @@
+# ███████╗██╗    ██╗ █████╗ ██╗   ██╗
+# ██╔════╝██║    ██║██╔══██╗╚██╗ ██╔╝
+# ███████╗██║ █╗ ██║███████║ ╚████╔╝ 
+# ╚════██║██║███╗██║██╔══██║  ╚██╔╝  
+# ███████║╚███╔███╔╝██║  ██║   ██║   
+# ╚══════╝ ╚══╝╚══╝ ╚═╝  ╚═╝   ╚═╝  
+
+################################################################################
+# Optimized Sway Configuration
+# Author: Aman Kumar Gupta
+# Date: 2025-03-05 (Updated)
+################################################################################
+
+#---------------------------------------------------------------------
+# External Resources & Global Variables
+#---------------------------------------------------------------------
+include $HOME/.config/sway/colorscheme
+font "JetBrainsMono Nerd Font" 11
+
+# Global Modifiers and Commands
+set $mod       Mod4
+set $alt       Mod1
+set $term      $HOME/.local/bin/kitty
+set $menu      wofi --show drun -i | xargs swaymsg exec --
+set $lock      $HOME/.config/sway/scripts/lock_screen
+
+# Enable Xwayland for X11 compatibility
+xwayland enable
+
+#---------------------------------------------------------------------
+# Input Devices Configuration
+#---------------------------------------------------------------------
+input * {
+  xkb_options "caps:escape_shifted_capslock"
+  # Additional per-device configs can go here…
+}
+
+input type:touchpad {
+  tap enabled
+  natural_scroll enabled
+  accel_profile "adaptive"
+  dwt enabled
+}
+
+focus_follows_mouse no
+
+#---------------------------------------------------------------------
+# Appearance & Theming
+#---------------------------------------------------------------------
+# Set client border colors (from your colorscheme)
+client.focused          $base05 $base0D $base00 $base0D $base0D
+client.focused_inactive $base01 $base01 $base05 $base03 $base01
+client.unfocused        $base01 $base00 $base05 $base01 $base01
+client.urgent           $base08 $base08 $base00 $base08 $base08
+client.placeholder      $base00 $base00 $base05 $base00 $base00
+client.background       $base07
+
+# Gaps and Borders
+set $gaps_inner 2
+set $gaps_outer 1
+gaps inner $gaps_inner
+gaps outer $gaps_outer
+smart_gaps on
+smart_borders on
+default_border pixel 2
+
+# Set the desktop background
+# output * bg $HOME/Pictures/nord-backgrounds/209.png fill
+
+#---------------------------------------------------------------------
+# Floating and Fullscreen Rules
+#---------------------------------------------------------------------
+# Enable floating for specific applications
+for_window [app_id="^(org\.kde\.kdeconnect\.daemon|dmenu|pavucontrol|songrec|electron|chromium|org\.kde\.polkit-kde-authentication-agent-1|Popsicle|fragments|org\.kde\.kdeconnect-urlhandler|lutris|org\.gnome\.TwentyFortyEight|com\.nextcloud\.desktopclient\.nextcloud|org\.kde\.kdeconnect-indicator|audacious|kvantummanager|qt5ct|com\.github\.wwmm\.easyeffects|com\.rafaelmardojai\.Blanket|gnome-calculator)$"] floating enable
+for_window [class="^(Bitwarden|XEyes)$"] floating enable
+for_window [title="^(Picture-in-Picture)$"] floating enable
+for_window [title="Copying .*"] floating enable
+for_window [title="Moving .*"] floating enable
+for_window [title="Definition .*"] floating enable
+for_window [title="Firefox — Sharing Indicator"] floating enable
+for_window [title="Progress Dialog — Dolphin"] floating enable
+
+# Hide select apps by sending them to the scratchpad
+for_window [title="Firefox — Sharing Indicator"] move scratchpad
+
+# Inhibit idle when any window is fullscreen
+for_window [class="^.*"] inhibit_idle fullscreen
+for_window [app_id="^.*"] inhibit_idle fullscreen
+
+# Force fullscreen for specific apps
+for_window [class="qemu-system-x86_64"] fullscreen
+for_window [app_id="mpv"] fullscreen
+for_window [app_id="Waydroid"] fullscreen
+
+# Make Picture-in-Picture sticky and remove borders
+for_window [title="Picture-in-Picture"] {
+    sticky enable
+    border none
+}
+
+#---------------------------------------------------------------------
+# Bar / Panel Configuration
+#---------------------------------------------------------------------
+bar {
+    swaybar_command waybar
+    # Uncomment and customize the colors block below if desired:
+    # colors {
+    #   background $base00
+    #   separator  $base01
+    #   statusline $base04
+    #   focused_workspace   $base05 $base0D $base00
+    #   active_workspace    $base05 $base03 $base00
+    #   inactive_workspace  $base03 $base01 $base05
+    #   urgent_workspace    $base08 $base08 $base00
+    #   binding_mode        $base00 $base0A $base00
+    # }
+}
+
+#---------------------------------------------------------------------
+# Autostart, Idle, and Screen Locking
+#---------------------------------------------------------------------
+exec swayidle -w \
+    timeout 300 "$lock" \
+    timeout 600 'swaymsg "output * dpms off"' \
+    resume 'swaymsg "output * dpms on"' \
+    before-sleep "$lock"
+
+# Reload and exit bindings    
+bindsym $mod+Shift+r reload; exec notify-send 'Sway' 'Configuration reloaded'
+bindsym $mod+Shift+q exit
+
+# Additional quick commands
+bindsym $mod+Escape exec $lock
+bindsym $mod+Shift+s exec "systemctl suspend"
+
+#---------------------------------------------------------------------
+# Window Navigation & Resizing
+#---------------------------------------------------------------------
+# Vim-like directional navigation
+set $left  h
+set $down  j
+set $up    k
+set $right l
+
+# Focus movement
+bindsym $mod+$left  focus left
+bindsym $mod+$down  focus down
+bindsym $mod+$up    focus up
+bindsym $mod+$right focus right
+
+# Move windows
+bindsym $mod+Shift+$left  move left
+bindsym $mod+Shift+$down  move down
+bindsym $mod+Shift+$up    move up
+bindsym $mod+Shift+$right move right
+
+# Enable mouse dragging with $mod held down
+floating_modifier $mod normal
+
+# Resize mode (similar to Pop Shell)
+bindsym $mod+r mode "resize"
+mode "resize" {
+    bindsym $left  resize shrink width 10px
+    bindsym $down  resize grow height 10px
+    bindsym $up    resize shrink height 10px
+    bindsym $right resize grow width 10px
+    bindsym Return mode "default"
+    bindsym Escape mode "default"
+}
+
+#---------------------------------------------------------------------
+# Workspace Management
+#---------------------------------------------------------------------
+# Define workspaces
+set $ws1  "1"
+set $ws2  "2"
+set $ws3  "3"
+set $ws4  "4"
+set $ws5  "5"
+set $ws6  "6"
+set $ws7  "7"
+set $ws8  "8"
+set $ws9  "9"
+set $ws10 "10"
+
+# Switch to workspaces
+bindsym $mod+1 workspace number $ws1
+bindsym $mod+2 workspace number $ws2
+bindsym $mod+3 workspace number $ws3
+bindsym $mod+4 workspace number $ws4
+bindsym $mod+5 workspace number $ws5
+bindsym $mod+6 workspace number $ws6
+bindsym $mod+7 workspace number $ws7
+bindsym $mod+8 workspace number $ws8
+bindsym $mod+9 workspace number $ws9
+bindsym $mod+0 workspace number $ws10
+
+# Cycle through workspaces
+bindsym $mod+Ctrl+$up   workspace prev
+bindsym $mod+Ctrl+$down workspace next
+
+# Move focused container to a workspace
+bindsym $mod+Shift+1 move container to workspace number $ws1
+bindsym $mod+Shift+2 move container to workspace number $ws2
+bindsym $mod+Shift+3 move container to workspace number $ws3
+bindsym $mod+Shift+4 move container to workspace number $ws4
+bindsym $mod+Shift+5 move container to workspace number $ws5
+bindsym $mod+Shift+6 move container to workspace number $ws6
+bindsym $mod+Shift+7 move container to workspace number $ws7
+bindsym $mod+Shift+8 move container to workspace number $ws8
+bindsym $mod+Shift+9 move container to workspace number $ws9
+bindsym $mod+Shift+0 move container to workspace number $ws10
+
+#---------------------------------------------------------------------
+# Layout and Gap Adjustments
+#---------------------------------------------------------------------
+bindsym $mod+o split toggle
+bindsym $mod+s layout stacking
+bindsym $mod+w layout tabbed
+bindsym $mod+e layout toggle split
+bindsym $mod+Shift+w sticky toggle
+
+# Quick layout commands and dynamic gap adjustments
+bindsym $mod+bracketleft gaps inner current minus 5
+bindsym $mod+bracketright gaps inner current plus 5
+bindsym $mod+m fullscreen toggle
+bindsym $mod+Shift+space floating toggle
+bindsym $mod+tab focus mode_toggle
+bindsym $mod+a focus parent
+
+#---------------------------------------------------------------------
+# Scratchpad Configuration
+#---------------------------------------------------------------------
+# Define properties for scratchterm (floating, sticky, centered)
+for_window [app_id="scratchterm"] {
+    floating enable
+    sticky enable
+    resize set 1820 980
+    move position center
+}
+for_window [app_id="scratchterm"] move scratchpad
+
+# Reusable command to toggle scratchterm with proper properties
+set $scratchterm_toggle exec bash -c "if swaymsg [app_id=scratchterm] scratchpad show && sleep 0.1 && swaymsg [app_id=scratchterm] resize set 1820 980 && swaymsg [app_id=scratchterm] move position center; then :; else $term --class=scratchterm; fi"
+bindsym $mod+Shift+Return $scratchterm_toggle
+bindsym Ctrl+$alt+s $scratchterm_toggle
+
+# General scratchpad keybindings
+bindsym $mod+Shift+minus move scratchpad
+bindsym $mod+minus scratchpad show
+
+#---------------------------------------------------------------------
+# Hardware Keys (Audio, Brightness, Screenshots)
+#---------------------------------------------------------------------
+# Audio controls (with notifications for waybar updates)
+bindsym XF86AudioRaiseVolume exec "wpctl set-volume -l 1.5 @DEFAULT_AUDIO_SINK@ 5%+; pkill -RTMIN+8 waybar"
+bindsym XF86AudioLowerVolume exec "wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-; pkill -RTMIN+8 waybar"
+bindsym XF86AudioMute        exec "wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle; pkill -RTMIN+8 waybar"
+# Media controls (playerctl)
+bindsym XF86AudioPlay exec "playerctl play-pause; pkill -RTMIN+5 waybar"
+bindsym XF86AudioNext exec "playerctl next; pkill -RTMIN+5 waybar"
+bindsym XF86AudioPrev exec "playerctl previous; pkill -RTMIN+5 waybar"
+# Brightness controls
+bindsym --locked $alt+F2 exec light -U 5
+bindsym --locked $alt+F3   exec light -A 5
+
+# Screenshot bindings using grim and slurp
+bindsym Print exec grim $HOME/Pictures/Screenshots/$(date +"%Y-%m-%d_%H-%M-%S").png; exec notify-send 'Grim' 'Image saved to Screenshots'
+bindsym $mod+Print exec grim -g "$(slurp)" $HOME/Pictures/Screenshots/$(date +"%Y-%m-%d_%H-%M-%S").png; exec notify-send 'Grim' 'Selected image saved to Screenshots'
+
+#---------------------------------------------------------------------
+# Application Launchers & Shortcuts
+#---------------------------------------------------------------------
+bindsym $mod+b     exec brave-browser
+bindsym $mod+Return exec $term
+bindsym $mod+q     kill
+bindsym $mod+n     exec swaync-client -t -sw
+bindsym $mod+space exec $menu
+bindsym $mod+d     exec $menu
+
+# Enable FreeSync on all outputs
+output * adaptive_sync on
+
+#---------------------------------------------------------------------
+# Auto-run / Additional Configurations
+#---------------------------------------------------------------------
+exec systemctl --user import-environment DISPLAY WAYLAND_DISPLAY SWAYSOCK
+exec hash dbus-update-activation-environment 2>/dev/null && \
+     dbus-update-activation-environment --systemd DISPLAY WAYLAND_DISPLAY SWAYSOCK
+# exec systemctl --user start sway-session.target
+exec --no-startup-id lxpolkit
+# exec /usr/libexec/xdg-desktop-portal --replace
+exec --no-startup-id swaync
+# Kill any existing slideshow script and start a new one
+# exec_always pkill -f ~/.config/sway/scripts/wallpaper_slideshow; ~/.config/sway/scripts/wallpaper_slideshow
+exec_always --no-startup-id pkill -f $HOME/.config/sway/scripts/wallpaper_slideshow; $HOME/.config/sway/scripts/wallpaper_slideshow
+
+# Include additional configuration files from config.d/
+include $HOME/.config/sway/config.d/*
+
