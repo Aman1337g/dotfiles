@@ -1,3 +1,9 @@
+set -o vi
+export GTK_A11Y=none
+export GTK_THEME=Nordic-darker
+bind '"\em":"/home/aman/scripts/motivation\n"'
+bind '"\eD":"/home/aman/scripts/define_word\n"'
+
 # Set terminal to support 256 colors
 export TERM="xterm-256color"
 
@@ -42,20 +48,20 @@ export XDG_STATE_HOME="$HOME/.local/state"
 export XDG_CACHE_HOME="$HOME/.cache"
 
 # Set default editor
-export EDITOR=/opt/nvim-linux64/bin/nvim
-export VISUAL=/opt/nvim-linux64/bin/nvim
+export EDITOR=nvim
+export VISUAL=nvim
 
 # Configure less to be more friendly for non-text input files
 [ -x /usr/bin/lesspipe ] && eval "$(SHELL=/bin/sh lesspipe)"
 
 # Set terminal title for supported terminals
 case ${TERM} in
-  xterm*|rxvt*|Eterm*|aterm|kterm|gnome*|alacritty|st|konsole*|kitty)
-    PROMPT_COMMAND+='; echo -ne "\033]0;${USER}@${HOSTNAME%%.*}:${PWD/#$HOME/\~}\007"'
-    ;;
-  screen*)
-    PROMPT_COMMAND+='; echo -ne "\033_${USER}@${HOSTNAME%%.*}:${PWD/#$HOME/\~}\033\\"'
-    ;;
+xterm* | rxvt* | Eterm* | aterm | kterm | gnome* | alacritty | st | konsole* | kitty)
+  PROMPT_COMMAND+='; echo -ne "\033]0;${USER}@${HOSTNAME%%.*}:${PWD/#$HOME/\~}\007"'
+  ;;
+screen*)
+  PROMPT_COMMAND+='; echo -ne "\033_${USER}@${HOSTNAME%%.*}:${PWD/#$HOME/\~}\033\\"'
+  ;;
 esac
 
 # Define aliases
@@ -87,7 +93,8 @@ export PATH="$HOME/scripts:/opt/nvim-linux64/bin:$HOME/.local/share/gnome-shell/
 eval "$(starship init bash)"
 
 # Initialize zoxide for enhanced 'cd' command
-eval "$(zoxide init bash)"
+eval "$(zoxide init --cmd cd bash)"
+bind -x '"\C-f": cdi'
 
 # Initialize cargo environment
 [ -f "$HOME/.cargo/env" ] && . "$HOME/.cargo/env"

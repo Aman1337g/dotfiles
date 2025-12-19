@@ -1,51 +1,112 @@
-#!/bin/bash
+##!/bin/bash
+#
+## Function to send error notification
+#send_error() {
+#    notify-send -t 3000 "Error" "$1" -h int:transient:1
+#    exit 1
+#}
+#
+## Get the selected word from clipboard
+## Try Wayland (wl-paste) first, then fallback to X11 (xclip)
+#word=$(wl-paste -p || xclip -o -selection primary)
+#
+## Validate input
+#if [ -z "$word" ]; then
+#    send_error "No word selected or copied."
+#fi
+#
+## Fetch the dictionary API response
+#query=$(curl -s --max-time 10 "https://api.dictionaryapi.dev/api/v2/entries/en/$word")
+#
+## Check if the query was successful and returned valid data
+#if [ -z "$query" ] || echo "$query" | grep -q -E "No Definitions Found|error"; then
+#    send_error "Invalid word: '$word'."
+#fi
+#
+## Extract definitions with part of speech
+## Use jq to safely parse JSON and handle potential errors
+#definitions=$(echo "$query" | jq -r '
+#    if type == "array" and length > 0 then
+#        [.[].meanings[] | {
+#            pos: .partOfSpeech,
+#            def: .definitions[0].definition
+#        }][:5] |
+#        to_entries[] |
+#        "\(.value.pos): \(.value.def)"
+#    else
+#        empty
+#    end
+#')
+#
+## Handle cases where definitions are missing
+#if [ -z "$definitions" ]; then
+#    send_error "No definitions found for '$word'."
+#fi
+#
+## Display full definitions in a scrollable window
+#echo "$definitions" | zenity --text-info \
+#    --title="Definition of $word" \
+#    --width=800 \
+#    --height=400 \
+#    --font="JetBrainsMono Nerd Font 12" \
+#
+#!/usr/bin/env bash
+set -euo pipefail
 
-# Function to send error notification
+# Silence GTK a11y warning
+export GTK_A11Y=none
+
+# Function to send error notification (fallback if no D-Bus)
 send_error() {
-    notify-send -t 3000 "Error" "$1" -h int:transient:1
-    exit 1
+  if command -v notify-send >/dev/null 2>&1; then
+    notify-send -t 3000 "Error" "$1" -h int:transient:1 || true
+  fi
+  zenity --error --text="$1" --title="Error"
+  exit 1
 }
 
-# Get the selected word from clipboard
-# Try Wayland (wl-paste) first, then fallback to X11 (xclip)
-word=$(wl-paste -p || xclip -o -selection primary)
+# Get word from clipboard (Wayland first, then X11 clipboard)
+if command -v wl-paste >/dev/null 2>&1 && [ -n "${WAYLAND_DISPLAY-}" ]; then
+  word=$(wl-paste)
+elif command -v xclip >/dev/null 2>&1 && [ -n "${DISPLAY-}" ]; then
+  word=$(xclip -o -selection clipboard)
+else
+  send_error "No clipboard tool available."
+fi
 
 # Validate input
 if [ -z "$word" ]; then
-    send_error "No word selected or copied."
+  send_error "No word selected or copied."
 fi
 
 # Fetch the dictionary API response
 query=$(curl -s --max-time 10 "https://api.dictionaryapi.dev/api/v2/entries/en/$word")
 
-# Check if the query was successful and returned valid data
+# Validate response
 if [ -z "$query" ] || echo "$query" | grep -q -E "No Definitions Found|error"; then
-    send_error "Invalid word: '$word'."
+  send_error "Invalid word: '$word'."
 fi
 
-# Extract definitions with part of speech
-# Use jq to safely parse JSON and handle potential errors
+# Extract definitions (limit to 5)
 definitions=$(echo "$query" | jq -r '
     if type == "array" and length > 0 then
         [.[].meanings[] | {
-            pos: .partOfSpeech, 
+            pos: .partOfSpeech,
             def: .definitions[0].definition
-        }][:5] | 
-        to_entries[] | 
+        }][:5] |
+        to_entries[] |
         "\(.value.pos): \(.value.def)"
     else
         empty
     end
 ')
 
-# Handle cases where definitions are missing
 if [ -z "$definitions" ]; then
-    send_error "No definitions found for '$word'."
+  send_error "No definitions found for '$word'."
 fi
 
-# Display full definitions in a scrollable window
+# Display definitions in Zenity
 echo "$definitions" | zenity --text-info \
-    --title="Definition of $word" \
-    --width=800 \
-    --height=400 \
-    --font="JetBrainsMono Nerd Font 12" \
+  --title="Definition of $word" \
+  --width=800 \
+  --height=400

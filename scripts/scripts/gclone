@@ -1,0 +1,22 @@
+#!/bin/bash
+
+read -p "Enter the number of repositories to clone: " total
+remaining=$total
+repos=()
+
+echo "Enter repository URLs (space-separated or one per line):"
+
+while [ "$remaining" -gt 0 ]; do
+  echo "[$remaining remaining] > "
+  read -a input
+  repos+=("${input[@]}")
+  remaining=$(( total - ${#repos[@]} ))
+done
+
+echo "📦 Cloning repositories..."
+for repo in "${repos[@]:0:$total}"; do
+  echo "➡️  Cloning: $repo"
+  git clone "$repo"
+done
+
+echo "✅ Done cloning $total repositories."
