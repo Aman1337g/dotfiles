@@ -279,4 +279,3 @@ stow -R bash
 
 In most cases, running `stow` is sufficient for adding new files. Use `stow -R` for a more thorough refresh of your symlinks.
 </details>
-
