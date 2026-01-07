@@ -10,6 +10,8 @@ sudo sysctl -p  # to apply the etc-copy-paste-hang-sol change
 
 ```
 
+> wsl/settings.json in /mnt/c/Users/AMAN.GUPTA7/AppData/Local/Packages/Microsoft.WindowsTerminal_8wekyb3d8bbwe/LocalState
+
 ## FAQs
 
 <details>
