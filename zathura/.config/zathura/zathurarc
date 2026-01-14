@@ -1,0 +1,66 @@
+# ------------------------------------------------------------------------------
+# Zathura Ultimate Config (Dark Mode & Vim Optimized)
+# ------------------------------------------------------------------------------
+
+# --- 1. CORE SETTINGS ---
+# Use the system clipboard (allows copying text from PDF with mouse/visual mode)
+set selection-clipboard clipboard
+
+# Enable incremental search (like Vim's / search)
+set incremental-search true
+
+# Show hidden files in file browser (optional)
+set show-hidden true
+
+# --- 2. DARK MODE & RECOLORING ---
+# Default to "recolor" mode on startup (True = Dark Mode enabled by default)
+set recolor "true"
+
+# Keep original image colors (Don't invert photos/diagrams)
+set recolor-keephue "true"
+
+# The "Light" color is your Background. (Soft Dark Grey)
+set recolor-lightcolor "#181818"
+
+# The "Dark" color is your Text. (Off-White/Grey)
+set recolor-darkcolor "#E0E0E0"
+
+# --- 3. UI & AESTHETICS ---
+# Hide the scrollbars for a cleaner look
+set scrollbars false
+
+# Status bar styling (matches the dark theme)
+set statusbar-bg "#181818"
+set statusbar-fg "#E0E0E0"
+
+# Highlight color (when you search or select text)
+set highlight-color "#d7d7d7"
+set highlight-active-color "#5caeef"
+
+# --- 4. NAVIGATION & ZOOM ---
+# Scroll step settings for smoother J/K movement
+set scroll-step 40
+
+# Zoom settings (fine-grained zoom control)
+set zoom-min 10
+set zoom-max 1000
+set zoom-step 10
+
+# --- 5. KEY MAPPINGS (Vim Enhancements) ---
+# Map 'r' to reload the file (useful if you are compiling LaTeX/Markdown live)
+map r reload
+
+# Map 'i' to toggle dark mode (Recolor) instantly
+map i recolor
+
+# Map 'p' to print
+map p print
+
+# Map 'b' to toggle the status bar (for full immersion)
+map b toggle_statusbar
+
+# Copy the current filename/path to clipboard
+map c feedkeys ":exec echo $FILE | xclip -selection clipboard<Return>"
+
+# Toggle fullscreen
+map V toggle_fullscreen
