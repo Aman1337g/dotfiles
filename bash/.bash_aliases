@@ -257,5 +257,18 @@ alias d="kitten diff"
 alias kd="git difftool --no-symlinks --dir-diff"
 alias ku="curl -L https://sw.kovidgoyal.net/kitty/installer.sh | sh /dev/stdin"
 
+# Fuzzy find and open PDF
+pdf() {
+  # Find all PDFs, pipe to fzf for selection
+  # Use -e for simple matching, -i for case-insensitive
+  file=$(find . -maxdepth 5 -name "*.pdf" | fzf -e -i)
+
+  # If a file was selected, open it with Zathura
+  if [ -n "$file" ]; then
+    zathura --mode fullscreen --config-dir="$HOME/.config/zathura" "$file" >/dev/null 2>&1 &
+    disown
+  fi
+}
+
 # The terminal rickroll
 alias rr="curl -s -L https://raw.githubusercontent.com/keroserene/rickrollrc/master/roll.sh | bash"
