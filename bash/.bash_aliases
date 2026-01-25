@@ -45,7 +45,7 @@ alias b='bluetoothctl'
 alias i='sudo apt install'
 alias purge='sudo apt purge'
 alias atrm='sudo apt autoremove'
-alias n='nano'
+alias n='nmtui'
 alias T='icat ~/Desktop/Time\ table\ 7th\ semester.png'
 alias count="for t in files links directories; do \
   case \$t in \
