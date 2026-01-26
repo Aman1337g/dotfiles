@@ -6,7 +6,5 @@
 
 config_version: 2
 settings:
-  content.javascript.enabled:
+  scrolling.smooth:
     global: true
-  tabs.show:
-    global: always

@@ -297,4 +297,12 @@ exec_always --no-startup-id pkill -f $HOME/.config/sway/scripts/wallpaper_slides
 
 # Include additional configuration files from config.d/
 include $HOME/.config/sway/config.d/*
+# Laptop screen (internal)
+output eDP-1 pos 0 1080 res 1920x1080
 
+# External HDMI monitor to the right
+output HDMI-A-1 pos 0 0 res 1920x1080
+
+# Window movement between monitors
+bindsym $mod+$alt+k move window to output up
+bindsym $mod+$alt+j move window to output down
