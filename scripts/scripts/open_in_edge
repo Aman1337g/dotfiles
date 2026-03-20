@@ -1,0 +1,10 @@
+#!/bin/bash
+# 1. Get the current Linux file path passed by Zathura
+LINUX_PATH="$1"
+
+# 2. Convert it to a Windows path (e.g., /mnt/c/Doc -> C:\Doc)
+WIN_PATH=$(wslpath -w "$LINUX_PATH")
+
+# 3. Tell Windows to open this path in Edge
+# cmd.exe /C starts a Windows command; 'start msedge' opens the browser
+cmd.exe /C start msedge "$WIN_PATH"

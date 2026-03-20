@@ -1,0 +1,76 @@
+#!/usr/bin/env bash
+# define_word - Fetches definition of a word (Dual-mode: CLI & GUI)
+
+set -euo pipefail
+export GTK_A11Y=none
+
+# Detect if we are running inside a visible terminal
+IS_CLI=0
+if [ -t 1 ]; then IS_CLI=1; fi
+
+# --- Smart Error Handler ---
+send_error() {
+  if [ "$IS_CLI" -eq 1 ]; then
+    echo -e "❌ \033[1;31mError:\033[0m $1" >&2
+  else
+    command -v notify-send >/dev/null 2>&1 && notify-send -t 3000 "Dictionary Error" "$1" -h int:transient:1 || true
+    command -v zenity >/dev/null 2>&1 && zenity --error --text="$1" --title="Error" 2>/dev/null || true
+  fi
+  exit 1
+}
+
+# --- Dependencies ---
+command -v curl >/dev/null 2>&1 || send_error "'curl' is required."
+command -v jq >/dev/null 2>&1 || send_error "'jq' is required."
+
+# --- Input Resolution ---
+WORD="${1:-}"
+
+# Fallback to clipboard if no argument is passed
+if [ -z "$WORD" ]; then
+  if command -v wl-paste >/dev/null 2>&1 && [ -n "${WAYLAND_DISPLAY:-}" ]; then
+    WORD=$(wl-paste -p 2>/dev/null || wl-paste) # Try primary selection, then clipboard
+  elif command -v xclip >/dev/null 2>&1 && [ -n "${DISPLAY:-}" ]; then
+    WORD=$(xclip -o -selection primary 2>/dev/null || xclip -o -selection clipboard 2>/dev/null)
+  elif command -v pbpaste >/dev/null 2>&1; then
+    WORD=$(pbpaste)
+  else
+    send_error "No word provided and clipboard tools are unavailable."
+  fi
+fi
+
+# Clean the string (remove newlines/trailing spaces)
+WORD=$(echo "$WORD" | tr -d '\n' | xargs)
+[ -z "$WORD" ] && send_error "No word selected or provided."
+
+# --- Fetch & Parse ---
+# Use '|| true' so curl failing doesn't trigger 'set -e' pipeline death; we handle it manually
+query=$(curl -s --max-time 5 "https://api.dictionaryapi.dev/api/v2/entries/en/$WORD" || true)
+
+if [ -z "$query" ] || echo "$query" | grep -q -i "No Definitions Found"; then
+  send_error "No definitions found for '$WORD'."
+fi
+
+definitions=$(echo "$query" | jq -r '
+  if type == "array" and length > 0 then
+    [.[].meanings[] | { pos: .partOfSpeech, def: .definitions[0].definition }][:5] |
+    to_entries[] | "\(.value.pos): \(.value.def)"
+  else
+    empty
+  end
+' 2>/dev/null || true)
+
+[ -z "$definitions" ] && send_error "Failed to parse definitions."
+
+# --- Output Presentation ---
+if [ "$IS_CLI" -eq 1 ]; then
+  echo -e "\n📖 Definition of \033[1;32m$WORD\033[0m:"
+  echo "$definitions" | while read -r line; do echo "  • $line"; done
+  echo ""
+else
+  command -v zenity >/dev/null 2>&1 || send_error "Zenity not installed for GUI display."
+  echo "$definitions" | zenity --text-info \
+    --title="Definition: $WORD" \
+    --width=600 \
+    --height=400 2>/dev/null
+fi

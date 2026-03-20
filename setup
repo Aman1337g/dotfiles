@@ -1,0 +1,59 @@
+#!/usr/bin/env bash
+# Aman's Ultimate Environment Bootstrapper
+
+echo "========================================"
+echo "🚀 Starting System Bootstrap..."
+echo "========================================"
+
+DOTFILES_DIR="$HOME/.dotfiles"
+
+# 1. Clone the repository if it doesn't exist
+if [ ! -d "$DOTFILES_DIR" ]; then
+  echo "📦 Cloning dotfiles repository..."
+  git clone https://github.com/Aman1337g/dotfiles.git "$DOTFILES_DIR"
+else
+  echo "✅ Dotfiles repository already exists at $DOTFILES_DIR"
+fi
+
+cd "$DOTFILES_DIR" || exit 1
+
+# 2. Run the universal installer
+echo ""
+echo "🛠️  Running Universal Tool Installer..."
+chmod +x install_tools link setup
+./install_tools
+
+# 3. Apply configurations based on the environment
+echo ""
+echo "========================================"
+echo "🔗 Linking Dotfiles Configuration"
+echo "========================================"
+
+if command -v stow >/dev/null 2>&1; then
+  echo "✅ GNU Stow detected. Proceeding with modular links..."
+
+  echo "  -> 💻 Stowing Core CLI Tools..."
+  echo "     (bash, scripts, git, nvim, tmux, starship, fastfetch)"
+  stow bash scripts git nvim tmux starship fastfetch
+
+  # Smart detection: Only stow GUI apps if a display server is running
+  if [ -n "${WAYLAND_DISPLAY:-}" ] || [ -n "${DISPLAY:-}" ]; then
+    echo "  -> 🖥️  GUI Environment detected! Stowing Desktop Apps..."
+    echo "     (code, kitty, fonts, icons, sway, themes, yazi, zathura, qutebrowser)"
+    stow code kitty fonts icons sway themes yazi zathura qutebrowser
+  else
+    echo "  -> 🖥️  No GUI detected (Headless/WSL). Skipping desktop apps."
+  fi
+
+  echo "  -> ⚠️  Note: System-level configs (etc-*) skipped in automated run."
+  echo "     Run 'sudo stow --target=/etc etc-copy-paste-hang-sol' manually if required."
+
+else
+  echo "🪟 GNU Stow not found (likely Windows Git Bash)."
+  echo "  -> Falling back to link script for core configs..."
+  ./link
+fi
+
+echo "========================================"
+echo "✨ Bootstrap Complete! Restart your terminal to see the magic."
+echo "========================================"

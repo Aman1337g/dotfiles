@@ -1,0 +1,59 @@
+#!/usr/bin/env bash
+# link.sh - Fallback symlink generator for systems without GNU Stow
+
+echo "========================================"
+echo "🔗 Starting Manual Symlink Fallback"
+echo "========================================"
+
+DOTFILES_DIR="$HOME/.dotfiles"
+
+# Helper function to create links securely
+link_file() {
+  local src="$1"
+  local dest="$2"
+
+  # Ensure destination directory exists
+  mkdir -p "$(dirname "$dest")"
+
+  # Back up existing file/folder if it exists and is NOT a symlink
+  if [ -e "$dest" ] && [ ! -L "$dest" ]; then
+    echo "  📦 Backing up existing $dest to ${dest}.bak"
+    mv "$dest" "${dest}.bak"
+  fi
+
+  # Create or update the symlink (-s soft, -n treat dest as normal file, -f force)
+  echo "  🔗 Linking $(basename "$dest") -> $src"
+  ln -snf "$src" "$dest"
+}
+
+echo "💻 Linking Core Configs..."
+
+# 1. Bash
+link_file "$DOTFILES_DIR/bash/.bashrc" "$HOME/.bashrc"
+link_file "$DOTFILES_DIR/bash/.bash_aliases" "$HOME/.bash_aliases"
+link_file "$DOTFILES_DIR/bash/.profile" "$HOME/.profile"
+
+# 2. Git & SSH
+link_file "$DOTFILES_DIR/git/.gitconfig" "$HOME/.gitconfig"
+if [ -f "$DOTFILES_DIR/git/.ssh/config" ]; then
+  link_file "$DOTFILES_DIR/git/.ssh/config" "$HOME/.ssh/config"
+fi
+
+# 3. Neovim
+link_file "$DOTFILES_DIR/nvim/.config/nvim" "$HOME/.config/nvim"
+
+# 4. Tmux
+link_file "$DOTFILES_DIR/tmux/.tmux.conf" "$HOME/.tmux.conf"
+
+# 5. Starship
+link_file "$DOTFILES_DIR/starship/.config/starship.toml" "$HOME/.config/starship.toml"
+
+# 6. Fastfetch
+link_file "$DOTFILES_DIR/fastfetch/.config/fastfetch" "$HOME/.config/fastfetch"
+
+# 7. Scripts (Mapping the inner folder correctly!)
+link_file "$DOTFILES_DIR/scripts/scripts" "$HOME/scripts"
+
+echo "========================================"
+echo "✅ Manual linking complete!"
+echo "========================================"

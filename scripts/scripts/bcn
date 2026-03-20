@@ -1,0 +1,25 @@
+#!/bin/bash
+
+# bcn, Bluetooth Connect
+
+device_amount=$(bluetoothctl devices | wc -l)
+
+if [ $device_amount -eq 1 ]; then
+    MAC=$(bluetoothctl devices | awk '{print $2}')
+    [ -z $MAC ] && MAC="NoDeviceFound"  # Prevents accidental disconnect error
+else
+    devices=$(bluetoothctl devices | awk '{print $3}')
+    
+    # Display device selection menu using zenity
+    select=$(echo "$devices" | zenity --list --column="Devices" --title="Select Bluetooth Device" --height=300 --width=400)
+    
+    MAC=$(bluetoothctl devices | grep "$select" | awk '{print $2}')
+    [ -z $MAC ] && MAC="NoDeviceFound"  # Prevents accidental disconnect error
+fi
+
+connect=$(bluetoothctl info $MAC | grep "Connected:" | awk '{print $2}')
+if [ "$connect" = "no" ]; then
+    bluetoothctl connect $MAC 
+elif [ "$connect" = "yes" ]; then
+    bluetoothctl disconnect $MAC
+fi

@@ -1,0 +1,11 @@
+* {
+    font-family: 'JetBrainsMono Nerd Font', monospace !important;
+}
+
+.ytp-gradient-bottom{
+   display:none !important
+}
+
+.ytp-gradient-top{
+   display:none !important
+}

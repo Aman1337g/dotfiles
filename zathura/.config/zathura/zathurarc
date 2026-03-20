@@ -1,0 +1,130 @@
+# ------------------------------------------------------------------------------
+# ZATHURA ULTIMATE CONFIGURATION
+# Optimized for: Dark Mode, Vim Navigation, High Visibility
+# ------------------------------------------------------------------------------
+
+# --- 1. CORE & PERFORMANCE ---
+# Use system clipboard (allows copying to Windows with mouse release)
+set selection-clipboard clipboard
+
+# Enable incremental search (like Vim's / search)
+set incremental-search false
+
+# Show hidden files in file browser
+set show-hidden true
+
+# Database (history) settings - Optional but good for reliability
+set database "sqlite"
+
+# --- 2. DARK MODE (RECOLOR) ---
+# Enable Dark Mode by default
+set recolor true
+
+# Keep original image colors (Don't invert photos/diagrams)
+set recolor-keephue true
+
+# Background Color (Soft Dark Grey - easier on eyes than pure black)
+set recolor-lightcolor "#181818"
+
+# Text Color (Off-White/Grey)
+set recolor-darkcolor "#E0E0E0"
+
+# --- 3. FONTS & VISIBILITY (MAX CONTRAST) ---
+# UI Font (Status bar & Sidebar) - Clean and Readable
+set font "JetBrainsMono Nerd Font Medium 10"
+
+# Hint Font (The numbers for 'f') - HUGE and THICK
+set default-font "JetBrainsMono Nerd Font ExtraBold 20"
+
+# Hint Box Background (High Contrast Yellow)
+set completion-highlight-bg "#FFD700"
+
+# Hint Text Color (Black)
+set completion-highlight-fg "#000000"
+
+# Link Highlight (Color of the link itself when 'f' is pressed)
+set highlight-color "rgba(255, 255, 0, 0.5)"
+
+# Search Highlight Colors
+set highlight-active-color "#5caeef"
+
+# --- 4. UI & AESTHETICS ---
+# Hide scrollbars for a cleaner look
+set scrollbars false
+
+# Open documents fitted to width by default
+set adjust-open "width"
+
+# Status bar styling
+set statusbar-bg "#181818"
+set statusbar-fg "#E0E0E0"
+set statusbar-h-padding 5
+set statusbar-v-padding 5
+
+# Notification Colors (Errors/Warnings)
+set notification-error-bg "#ff5555"
+set notification-error-fg "#ffffff"
+set notification-warning-bg "#ffb86c"
+set notification-warning-fg "#000000"
+
+# --- 5. NAVIGATION & ZOOM ---
+# Smooth scrolling steps
+set scroll-step 40
+
+# Fine-grained zoom control
+set zoom-min 10
+set zoom-max 1000
+set zoom-step 10
+
+# --- 6. KEY MAPPINGS (NORMAL MODE) ---
+# R: Reload file (Great for live editing)
+map R reload
+
+# i: Toggle Dark Mode (Recolor)
+map i recolor
+
+# p: Print
+map p print
+
+# b: Toggle status bar
+map b toggle_statusbar
+
+# c: Copy path to clipboard
+map c feedkeys ":exec echo $FILE | xclip -selection clipboard<Return>"
+
+# V: Toggle Fullscreen
+map V toggle_fullscreen
+
+# e: Open in Edge (Edit Mode)
+map e exec "/home/aman/scripts/open_in_edge '$FILE'"
+
+# --- 7. KEY MAPPINGS (FULLSCREEN MODE) ---
+# Note: Fullscreen mode ignores Normal keys, so we must remap them.
+
+map [fullscreen] q quit
+map [fullscreen] R reload
+map [fullscreen] i recolor
+map [fullscreen] b toggle_statusbar
+map [fullscreen] V toggle_fullscreen
+
+# Navigation safety in fullscreen
+map [fullscreen] j scroll down
+map [fullscreen] k scroll up
+map [fullscreen] h scroll left
+map [fullscreen] l scroll right
+
+# Edit in Edge (Fullscreen)
+map [fullscreen] e exec "/home/aman/scripts/open_in_edge '$FILE'"
+
+# Render pages ahead of time for smoother scrolling
+set render-loading true
+set render-loading-bgcolor "#181818"
+set render-loading-fgcolor "#E0E0E0"
+
+# Add internal padding (in pixels)
+set page-padding 1
+
+# Semi-transparent green for active search result
+set highlight-active-color "rgba(92, 174, 239, 0.5)"
+# Semi-transparent grey for other results
+set highlight-color "rgba(215, 215, 215, 0.5)"

@@ -1,0 +1,47 @@
+#!/usr/bin/env bash
+# install_themes.sh - Fetches heavy UI assets (Icons & GTK Themes)
+
+echo "========================================"
+echo "🎨 Starting Linux Desktop Asset Installer..."
+echo "========================================"
+
+# Only run on Linux (Skip Windows Git Bash/macOS)
+if [ "$(uname -s)" != "Linux" ]; then
+    echo "⚠️  Not on Linux. Skipping GUI asset installation."
+    exit 0
+fi
+
+# Ensure user-level asset directories exist
+mkdir -p ~/.local/share/icons
+mkdir -p ~/.themes
+
+# --- 1. Tela Circle Nord Icons ---
+# Checks if the dark variant exists before downloading
+if [ ! -d "$HOME/.local/share/icons/Tela-circle-nord-dark" ]; then
+    echo "📦 Downloading Tela Circle Nord Icons..."
+    git clone --depth=1 https://github.com/vinceliuice/Tela-circle-icon-theme.git /tmp/tela-icons
+    cd /tmp/tela-icons || exit
+    # Install specific 'nord' colorway to local user directory
+    ./install.sh -c nord -d ~/.local/share/icons
+    cd - > /dev/null || exit
+    rm -rf /tmp/tela-icons
+    echo "✅ Icons installed."
+else
+    echo "✅ Tela Circle Nord Icons already installed."
+fi
+
+# --- 2. Nordic GTK Theme ---
+if [ ! -d "$HOME/.themes/Nordic-darker" ]; then
+    echo "📦 Downloading Nordic GTK Theme..."
+    # The EliverLara repo is the community standard for Nordic GTK
+    git clone --depth=1 https://github.com/EliverLara/Nordic.git /tmp/nordic-theme
+    mv /tmp/nordic-theme ~/.themes/Nordic-darker
+    rm -rf ~/.themes/Nordic-darker/.git # Clean up the git history to save space
+    echo "✅ GTK Theme installed."
+else
+    echo "✅ Nordic GTK Theme already installed."
+fi
+
+echo "========================================"
+echo "🎉 Desktop assets downloaded and ready!"
+echo "========================================"

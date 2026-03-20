@@ -1,0 +1,3 @@
+#!/bin/bash
+cd ~/qutebrowser || exit
+/home/aman/qutebrowser/.venv/bin/python3 -m qutebrowser

@@ -1,0 +1,42 @@
+#!/usr/bin/env bash
+# motivation - Fetches a random quote (Dual-mode: CLI & GUI)
+
+set -euo pipefail
+
+IS_CLI=0
+if [ -t 1 ]; then IS_CLI=1; fi
+
+send_error() {
+  if [ "$IS_CLI" -eq 1 ]; then
+    echo -e "❌ \033[1;31mError:\033[0m $1" >&2
+  else
+    command -v zenity >/dev/null 2>&1 && zenity --error --text="$1" --title="Motivation Error" 2>/dev/null || true
+  fi
+  exit 1
+}
+
+# --- Dependencies ---
+command -v curl >/dev/null 2>&1 || send_error "'curl' is required."
+command -v jq >/dev/null 2>&1 || send_error "'jq' is required."
+
+# --- Fetch & Parse ---
+response=$(curl -s --max-time 5 "https://zenquotes.io/api/random" || true)
+[ -z "$response" ] && send_error "Failed to reach ZenQuotes API."
+
+# jq safe parsing with fallback
+quote=$(echo "$response" | jq -r '.[0].q // empty' 2>/dev/null || true)
+author=$(echo "$response" | jq -r '.[0].a // "Unknown"' 2>/dev/null || true)
+
+[ -z "$quote" ] && send_error "Failed to parse quote data."
+
+# --- Output Presentation ---
+if [ "$IS_CLI" -eq 1 ]; then
+  # CLI formatting (Italics and bold)
+  echo -e "\n💡 \033[3m\"$quote\"\033[0m"
+  echo -e "   — \033[1m$author\033[0m\n"
+else
+  # GUI formatting
+  command -v zenity >/dev/null 2>&1 || send_error "Zenity not installed for GUI display."
+  display_message="<span font_desc='JetBrainsMono Nerd Font 12' size='x-large'><b>$quote</b>\n\n<i>- $author</i></span>"
+  zenity --info --width=500 --height=200 --text="<markup>$display_message</markup>" --title="Daily Motivation" 2>/dev/null
+fi

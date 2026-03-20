@@ -1,0 +1,15 @@
+#!/bin/bash
+
+# Windows VS Code portable location
+VSCODE_PATH="/mnt/c/Tools/VSCode-win32-x64-1.111.0"
+
+# Ensure required folders exist
+mkdir -p "$VSCODE_PATH/data"
+mkdir -p "$VSCODE_PATH/extensions"
+
+# Launch VS Code
+"$VSCODE_PATH/Code.exe" \
+  --new-window \
+  --user-data-dir "C:\\Tools\\VSCode-win32-x64-1.111.0\\data" \
+  --extensions-dir "C:\\Tools\\VSCode-win32-x64-1.111.0\\extensions" \
+  "$@"
