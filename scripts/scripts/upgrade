@@ -1,0 +1,55 @@
+#!/usr/bin/env bash
+# upgrade.sh - Universal System Updater
+
+echo "========================================"
+echo "🔄 Starting Universal System Upgrade..."
+echo "========================================"
+
+_has() { command -v "$1" >/dev/null 2>&1; }
+
+# --- 0. Android (Termux) ---
+if [ -n "$TERMUX_VERSION" ]; then
+  echo "📱 Upgrading Termux packages..."
+  pkg update -y && pkg upgrade -y
+
+# --- 1. macOS (Homebrew) ---
+elif _has brew; then
+  echo "🍏 Upgrading Homebrew packages..."
+  brew update && brew upgrade
+
+# --- 2. Debian / Ubuntu (apt) ---
+elif _has apt; then
+  echo "🐧 Upgrading apt packages..."
+  sudo apt update && sudo apt upgrade -y
+
+# --- 3. Alpine Linux (apk) ---
+elif _has apk; then
+  echo "🏔️ Upgrading apk packages..."
+  sudo apk update && sudo apk upgrade
+
+# --- 4. Windows Git Bash (Winget & Portables) ---
+elif [[ "$OSTYPE" == "msys" || "$OSTYPE" == "cygwin" ]]; then
+  echo "🪟 Upgrading Windows (Winget) packages..."
+  # Winget has a brilliant --all flag to update everything it tracks
+  winget upgrade --all --include-unknown --accept-package-agreements --accept-source-agreements || true
+
+  echo "🚀 Upgrading portable Starship..."
+  curl -sLo ~/.local/bin/starship.zip https://github.com/starship/starship/releases/latest/download/starship-x86_64-pc-windows-msvc.zip
+  unzip -q -o ~/.local/bin/starship.zip -d ~/.local/bin/
+  rm ~/.local/bin/starship.zip
+
+  echo "📝 Upgrading portable Neovim..."
+  # Note: Update this URL manually when Neovim releases a new major version
+  curl -sLo ~/.local/nvim.zip https://github.com/neovim/neovim/releases/download/v0.11.6/nvim-win64.zip
+  unzip -q -o ~/.local/nvim.zip -d ~/.local/
+  rm ~/.local/nvim.zip
+  ln -sf ~/.local/nvim-win64/bin/nvim.exe ~/.local/bin/nvim
+
+else
+  echo "❌ Unsupported OS for automated upgrades."
+  exit 1
+fi
+
+echo "========================================"
+echo "✅ System upgrade complete!"
+echo "========================================"

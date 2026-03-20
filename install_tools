@@ -1,21 +1,61 @@
 #!/usr/bin/env bash
-# install_tools.sh - Universal Environment Bootstrapper
+# install_tools - Universal Environment Bootstrapper
 
+echo "========================================"
 echo "🚀 Starting Universal Tool Setup..."
+echo "========================================"
+
+# ---------------------------------------------------------
+# 📝 THE MASTER PACKAGE LISTS
+# Add new standard tools here! The script handles the rest.
+# ---------------------------------------------------------
+
+BREW_PACKAGES=(
+  eza bat fzf zoxide starship neovim
+)
+
+APT_PACKAGES=(
+  eza bat fzf neovim curl unzip
+)
+
+APK_PACKAGES=(
+  eza bat fzf zoxide starship neovim curl
+)
+
+WINGET_PACKAGES=(
+  eza-community.eza
+  sharkdp.bat
+  junegunn.fzf
+  ajeetdsouza.zoxide
+)
+
+TERMUX_PACKAGES=(
+  git curl wget jq tmux neovim fzf eza bat zoxide starship openssh
+)
+
+# ---------------------------------------------------------
+# ⚙️ THE INSTALLATION ENGINE
+# (No need to edit below this line for standard packages)
+# ---------------------------------------------------------
 
 _has() { command -v "$1" >/dev/null 2>&1; }
 
+# --- 0. Android (Termux) ---
+if [ -n "$TERMUX_VERSION" ]; then
+  echo "📱 Termux detected. Using pkg..."
+  pkg update -y
+  pkg install -y "${TERMUX_PACKAGES[@]}"
+
 # --- 1. macOS (Homebrew) ---
-if _has brew; then
+elif _has brew; then
   echo "🍏 macOS detected. Using Homebrew..."
-  brew install eza bat fzf zoxide starship neovim
+  brew install "${BREW_PACKAGES[@]}"
 
 # --- 2. Debian / Ubuntu (apt) ---
 elif _has apt; then
   echo "🐧 Debian/Ubuntu detected. Using apt..."
   sudo apt update
-  # Simply added 'eza' directly to the native apt install!
-  sudo apt install -y eza bat fzf neovim curl unzip
+  sudo apt install -y "${APT_PACKAGES[@]}"
 
   # Ubuntu calls bat 'batcat', let's symlink it for standard usage
   mkdir -p ~/.local/bin
@@ -28,7 +68,7 @@ elif _has apt; then
 # --- 3. Alpine Linux (Docker/Containers) ---
 elif _has apk; then
   echo "🏔️ Alpine detected. Using apk..."
-  sudo apk add eza bat fzf zoxide starship neovim curl
+  sudo apk add "${APK_PACKAGES[@]}"
 
 # --- 4. Windows Git Bash (via winget and portable binaries) ---
 elif [[ "$OSTYPE" == "msys" || "$OSTYPE" == "cygwin" ]]; then
@@ -36,27 +76,35 @@ elif [[ "$OSTYPE" == "msys" || "$OSTYPE" == "cygwin" ]]; then
   mkdir -p ~/.local/bin
 
   # 1. Install standard CLI tools via Winget (User Scope)
-  winget install --scope user --accept-package-agreements --accept-source-agreements \
-    eza-community.eza sharkdp.bat junegunn.fzf ajeetdsouza.zoxide || true
+  for pkg in "${WINGET_PACKAGES[@]}"; do
+    winget install --id="$pkg" --scope user --accept-package-agreements --accept-source-agreements || true
+  done
 
   # 2. Portable Starship (Bypasses Admin MSI)
-  echo "🚀 Downloading portable Starship..."
-  curl -sLo ~/.local/bin/starship.zip https://github.com/starship/starship/releases/latest/download/starship-x86_64-pc-windows-msvc.zip
-  unzip -q -o ~/.local/bin/starship.zip -d ~/.local/bin/
-  rm ~/.local/bin/starship.zip
+  if ! _has starship; then
+    echo "🚀 Downloading portable Starship..."
+    curl -sLo ~/.local/bin/starship.zip https://github.com/starship/starship/releases/latest/download/starship-x86_64-pc-windows-msvc.zip
+    unzip -q -o ~/.local/bin/starship.zip -d ~/.local/bin/
+    rm ~/.local/bin/starship.zip
+  fi
 
   # 3. Portable Neovim (Bypasses Admin MSI)
-  echo "📝 Downloading portable Neovim..."
-  curl -sLo ~/.local/nvim.zip https://github.com/neovim/neovim/releases/download/v0.11.6/nvim-win64.zip
-  unzip -q -o ~/.local/nvim.zip -d ~/.local/
-  rm ~/.local/nvim.zip
-  # Link the executable into your PATH
-  ln -sf ~/.local/nvim-win64/bin/nvim.exe ~/.local/bin/nvim
+  if ! _has nvim; then
+    echo "📝 Downloading portable Neovim..."
+    curl -sLo ~/.local/nvim.zip https://github.com/neovim/neovim/releases/download/v0.11.6/nvim-win64.zip
+    unzip -q -o ~/.local/nvim.zip -d ~/.local/
+    rm ~/.local/nvim.zip
+    # Link the executable into your PATH
+    ln -sf ~/.local/nvim-win64/bin/nvim.exe ~/.local/bin/nvim
+  fi
 
   echo "✅ Windows portable setup complete."
+
 else
   echo "❌ Unsupported package manager. Please install tools manually."
   exit 1
 fi
 
+echo "========================================"
 echo "✅ Setup complete! Restart your terminal or run 'source ~/.profile && source ~/.bashrc'."
+echo "========================================"

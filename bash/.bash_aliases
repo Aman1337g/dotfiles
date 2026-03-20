@@ -117,15 +117,22 @@ _get_ado_ticket() {
 }
 
 dc() {
+  set -f # Temporarily disable globbing (prevents * from expanding into filenames)
   local ticket type msg commit_format
 
   # Fetch ticket (will be empty if not found, but won't crash)
-  ticket=$(_get_ado_ticket) || return 1
+  ticket=$(_get_ado_ticket) || {
+    set +f
+    return 1
+  }
 
   if [ $# -gt 0 ]; then
     type="$1"
     shift
-  else type="fix"; fi
+  else
+    type="fix"
+  fi
+
   msg="${*:-dummy commit}"
 
   # Dynamically format the commit message
@@ -136,6 +143,8 @@ dc() {
   fi
 
   git commit -m "$commit_format"
+
+  set +f # Re-enable globbing so the rest of your terminal works normally
 }
 
 pc() {
@@ -332,3 +341,8 @@ alias qu='cd "$HOME/qutebrowser/" && scripts/mkvenv.py --update && exit'
 alias rr="curl -s -L https://raw.githubusercontent.com/keroserene/rickrollrc/master/roll.sh | bash"
 alias wtl="sed -i 's/\r$//'"
 alias fp='fzf --preview="bat --color=always {}"'
+
+# System Maintenance
+alias upgrade='~/scripts/upgrade'
+alias clean='~/scripts/cleanup'
+alias update-all='upgrade && clean'

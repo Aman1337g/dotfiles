@@ -1,0 +1,23 @@
+# --- Termux Specific Setup ---
+if [ -n "$TERMUX_VERSION" ]; then
+    echo "📱 Termux environment detected!"
+    
+    # 1. Setup Storage
+    echo "Linking Android storage..."
+    termux-setup-storage
+    
+    # 2. Setup Termux Styling (Fonts & Colors)
+    echo "Applying JetBrains Mono Nerd Font to Termux..."
+    mkdir -p ~/.termux
+    # Copy your tracked font and rename it to the exact file Termux looks for
+    cp ~/.dotfiles/fonts/.local/share/fonts/JetBrainsMonoNerdFont-Regular.ttf ~/.termux/font.ttf
+    
+    # Reload Termux settings to apply the font instantly
+    termux-reload-settings
+    
+    # 3. Handle Packages safely (No Sudo)
+    pkg update -y
+    pkg install eza bat fzf zoxide git starship neovim -y
+    
+    echo "✅ Termux bootstrap complete!"
+fi

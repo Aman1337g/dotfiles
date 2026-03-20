@@ -1,11 +1,13 @@
 #!/usr/bin/env bash
-# link.sh - Fallback symlink generator for systems without GNU Stow
+# link - Fallback symlink generator for systems without GNU Stow
 
 echo "========================================"
 echo "🔗 Starting Manual Symlink Fallback"
 echo "========================================"
 
 DOTFILES_DIR="$HOME/.dotfiles"
+# Generate a timestamp for safe, non-overwriting backups
+TIMESTAMP=$(date +%Y%m%d_%H%M%S)
 
 # Helper function to create links securely
 link_file() {
@@ -17,8 +19,8 @@ link_file() {
 
   # Back up existing file/folder if it exists and is NOT a symlink
   if [ -e "$dest" ] && [ ! -L "$dest" ]; then
-    echo "  📦 Backing up existing $dest to ${dest}.bak"
-    mv "$dest" "${dest}.bak"
+    echo "  📦 Backing up existing $dest to ${dest}.${TIMESTAMP}.bak"
+    mv "$dest" "${dest}.${TIMESTAMP}.bak"
   fi
 
   # Create or update the symlink (-s soft, -n treat dest as normal file, -f force)
@@ -37,6 +39,9 @@ link_file "$DOTFILES_DIR/bash/.profile" "$HOME/.profile"
 link_file "$DOTFILES_DIR/git/.gitconfig" "$HOME/.gitconfig"
 if [ -f "$DOTFILES_DIR/git/.ssh/config" ]; then
   link_file "$DOTFILES_DIR/git/.ssh/config" "$HOME/.ssh/config"
+  # SECURE SSH: Enforce strict permissions so SSH doesn't block connections
+  chmod 700 "$HOME/.ssh"
+  chmod 600 "$HOME/.ssh/config"
 fi
 
 # 3. Neovim
@@ -51,8 +56,22 @@ link_file "$DOTFILES_DIR/starship/.config/starship.toml" "$HOME/.config/starship
 # 6. Fastfetch
 link_file "$DOTFILES_DIR/fastfetch/.config/fastfetch" "$HOME/.config/fastfetch"
 
-# 7. Scripts (Mapping the inner folder correctly!)
+# 7. Scripts
 link_file "$DOTFILES_DIR/scripts/scripts" "$HOME/scripts"
+
+# 8. Windows Terminal (OS-Aware Copy, NOT Symlink)
+if [[ "$OSTYPE" == "msys" || "$OSTYPE" == "cygwin" ]]; then
+  echo "🪟 Windows detected. Copying Windows Terminal settings..."
+  WT_DEST="$HOME/AppData/Local/Packages/Microsoft.WindowsTerminal_8wekyb3d8bbwe/LocalState/settings.json"
+
+  if [ -f "$WT_DEST" ]; then
+    echo "  📦 Backing up Windows Terminal config..."
+    cp "$WT_DEST" "${WT_DEST}.${TIMESTAMP}.bak"
+  fi
+
+  echo "  📝 Copying settings.json to LocalState"
+  cp "$DOTFILES_DIR/windows-terminal/settings.json" "$WT_DEST"
+fi
 
 echo "========================================"
 echo "✅ Manual linking complete!"

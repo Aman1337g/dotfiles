@@ -5,6 +5,14 @@ echo "========================================"
 echo "🚀 Starting System Bootstrap..."
 echo "========================================"
 
+# --- 📱 Termux Pre-Flight Check ---
+if [ -n "$TERMUX_VERSION" ]; then
+  if ! command -v git >/dev/null 2>&1; then
+    echo "📱 Termux detected without Git. Installing prerequisite..."
+    pkg update -y && pkg install git -y
+  fi
+fi
+
 DOTFILES_DIR="$HOME/.dotfiles"
 
 # 1. Clone the repository if it doesn't exist
@@ -34,15 +42,28 @@ if command -v stow >/dev/null 2>&1; then
 
   echo "  -> 💻 Stowing Core CLI Tools..."
   echo "     (bash, scripts, git, nvim, tmux, starship, fastfetch)"
+  echo "  -> 🧹 Clearing runway for Stow (Backing up defaults)..."
+  for file in ~/.bashrc ~/.bash_aliases ~/.profile ~/.gitconfig ~/.tmux.conf; do
+    if [ -f "$file" ] && [ ! -L "$file" ]; then
+      echo "     📦 Backing up $file to ${file}.bak"
+      mv "$file" "${file}.bak"
+    fi
+  done
   stow bash scripts git nvim tmux starship fastfetch
 
   # Smart detection: Only stow GUI apps if a display server is running
   if [ -n "${WAYLAND_DISPLAY:-}" ] || [ -n "${DISPLAY:-}" ]; then
     echo "  -> 🖥️  GUI Environment detected! Stowing Desktop Apps..."
-    echo "     (code, kitty, fonts, icons, sway, themes, yazi, zathura, qutebrowser)"
-    stow code kitty fonts icons sway themes yazi zathura qutebrowser
+    # Removed 'icons' and 'themes' from this list!
+    stow code kitty fonts sway yazi zathura qutebrowser
+
+    # Dynamically download the heavy assets instead!
+    if [ -f "scripts/scripts/install_themes.sh" ]; then
+      chmod +x scripts/scripts/install_themes.sh
+      ./scripts/scripts/install_themes.sh
+    fi
   else
-    echo "  -> 🖥️  No GUI detected (Headless/WSL). Skipping desktop apps."
+    echo "  -> 🖥️  No GUI detected (Headless/WSL/Termux). Skipping desktop apps."
   fi
 
   echo "  -> ⚠️  Note: System-level configs (etc-*) skipped in automated run."

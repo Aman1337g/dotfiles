@@ -6,7 +6,7 @@ A production-grade, cross-platform collection of dotfiles and environment config
 * **Zero-Touch Bootstrapper:** A single one-liner orchestrates repository cloning, tool installation, and symlinking based on your exact environment.
 * **The Ultimate Editor:** A fully customized, transparent [LazyVim](https://github.com/LazyVim/LazyVim) setup featuring the Nordic theme, pre-configured for DevOps workflows (Terraform, Python, YAML, JSON).
 * **Smart Environment Detection:** Automatically detects if you are running a GUI (Wayland/X11) or a headless container, stowing desktop apps (Kitty, Sway) only when necessary.
-* **Graceful Degradation:** Safely falls back to a custom `link.sh` script on Windows Git Bash where GNU `stow` isn't natively available.
+* **Graceful Degradation:** Safely falls back to a custom `link` script on Windows Git Bash where GNU `stow` isn't natively available.
 * **UAC Bypass:** Windows installations via `winget` are strictly scoped to the user profile, bypassing annoying admin prompts.
 
 ---
