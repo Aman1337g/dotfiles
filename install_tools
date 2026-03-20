@@ -11,15 +11,15 @@ echo "========================================"
 # ---------------------------------------------------------
 
 BREW_PACKAGES=(
-  eza bat fzf zoxide starship neovim
+  eza bat fzf zoxide starship neovim stow
 )
 
 APT_PACKAGES=(
-  eza bat fzf neovim curl unzip
+  eza bat fzf neovim curl unzip stow
 )
 
 APK_PACKAGES=(
-  eza bat fzf zoxide starship neovim curl
+  eza bat fzf zoxide starship neovim curl stow
 )
 
 WINGET_PACKAGES=(
@@ -30,7 +30,7 @@ WINGET_PACKAGES=(
 )
 
 TERMUX_PACKAGES=(
-  git curl wget jq tmux neovim fzf eza bat zoxide starship openssh
+  git curl wget jq tmux neovim fzf eza bat zoxide starship openssh stow
 )
 
 # ---------------------------------------------------------
@@ -62,8 +62,8 @@ elif _has apt; then
   [ -f /usr/bin/batcat ] && ln -sf /usr/bin/batcat ~/.local/bin/bat
 
   echo "📦 Installing modern Rust tools via official scripts..."
-  curl -sS https://starship.rs/install.sh | sh -s -- -y
-  curl -sSfL https://raw.githubusercontent.com/ajeetdsouza/zoxide/main/install.sh | sh
+  curl -k -sS https://starship.rs/install.sh | sh -s -- -y
+  curl -k -sSfL https://raw.githubusercontent.com/ajeetdsouza/zoxide/main/install.sh | sh
 
 # --- 3. Alpine Linux (Docker/Containers) ---
 elif _has apk; then
@@ -83,7 +83,7 @@ elif [[ "$OSTYPE" == "msys" || "$OSTYPE" == "cygwin" ]]; then
   # 2. Portable Starship (Bypasses Admin MSI)
   if ! _has starship; then
     echo "🚀 Downloading portable Starship..."
-    curl -sLo ~/.local/bin/starship.zip https://github.com/starship/starship/releases/latest/download/starship-x86_64-pc-windows-msvc.zip
+    curl -k -sLo ~/.local/bin/starship.zip https://github.com/starship/starship/releases/latest/download/starship-x86_64-pc-windows-msvc.zip
     unzip -q -o ~/.local/bin/starship.zip -d ~/.local/bin/
     rm ~/.local/bin/starship.zip
   fi
@@ -91,7 +91,7 @@ elif [[ "$OSTYPE" == "msys" || "$OSTYPE" == "cygwin" ]]; then
   # 3. Portable Neovim (Bypasses Admin MSI)
   if ! _has nvim; then
     echo "📝 Downloading portable Neovim..."
-    curl -sLo ~/.local/nvim.zip https://github.com/neovim/neovim/releases/download/v0.11.6/nvim-win64.zip
+    curl -k -sLo ~/.local/nvim.zip https://github.com/neovim/neovim/releases/download/v0.11.6/nvim-win64.zip
     unzip -q -o ~/.local/nvim.zip -d ~/.local/
     rm ~/.local/nvim.zip
     # Link the executable into your PATH
