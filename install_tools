@@ -54,6 +54,17 @@ elif _has brew; then
 # --- 2. Debian / Ubuntu (apt) ---
 elif _has apt; then
   echo "🐧 Debian/Ubuntu detected. Using apt..."
+
+  # Inject eza repository for Ubuntu
+  if ! _has eza; then
+    echo "📦 Adding eza repository..."
+    sudo mkdir -p /etc/apt/keyrings
+    # Using -k on wget/curl to bypass corporate SSL inspection
+    wget -qO- --no-check-certificate https://raw.githubusercontent.com/eza-community/eza/main/deb.asc | sudo gpg --dearmor -o /etc/apt/keyrings/gierens.gpg
+    echo "deb [signed-by=/etc/apt/keyrings/gierens.gpg] https://deb.gierens.de stable main" | sudo tee /etc/apt/sources.list.d/gierens.list
+    sudo chmod 644 /etc/apt/keyrings/gierens.gpg /etc/apt/sources.list.d/gierens.list
+  fi
+
   sudo apt update
   sudo apt install -y "${APT_PACKAGES[@]}"
 
@@ -62,8 +73,16 @@ elif _has apt; then
   [ -f /usr/bin/batcat ] && ln -sf /usr/bin/batcat ~/.local/bin/bat
 
   echo "📦 Installing modern Rust tools via official scripts..."
-  curl -k -sS https://starship.rs/install.sh | sh -s -- -y
-  curl -k -sSfL https://raw.githubusercontent.com/ajeetdsouza/zoxide/main/install.sh | sh
+
+  # 1. Create a temporary config to force ALL curl commands to bypass SSL
+  echo "insecure" >~/.curlrc
+
+  # 2. Run the official scripts (they will now automatically use the insecure flag!)
+  curl -sS https://starship.rs/install.sh | sh -s -- -y
+  curl -sSfL https://raw.githubusercontent.com/ajeetdsouza/zoxide/main/install.sh | sh
+
+  # 3. Clean up the config to ensure your machine stays secure for daily use
+  rm ~/.curlrc
 
 # --- 3. Alpine Linux (Docker/Containers) ---
 elif _has apk; then

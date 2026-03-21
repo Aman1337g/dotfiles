@@ -40,24 +40,26 @@ echo "========================================"
 if command -v stow >/dev/null 2>&1; then
   echo "✅ GNU Stow detected. Proceeding with modular links..."
 
-  echo "  -> 💻 Stowing Core CLI Tools..."
-  echo "     (bash, scripts, git, nvim, tmux, starship, fastfetch)"
-  echo "  -> 🧹 Clearing runway for Stow (Backing up defaults)..."
-  for file in ~/.bashrc ~/.bash_aliases ~/.profile ~/.gitconfig ~/.tmux.conf; do
-    if [ -f "$file" ] && [ ! -L "$file" ]; then
-      echo "     📦 Backing up $file to ${file}.bak"
-      mv "$file" "${file}.bak"
+  echo "  -> 🧹 Clearing runway for Stow (Handling old symlinks and defaults)..."
+  # We remove old symlinks or backup physical files to give Stow a blank canvas
+  for target in ~/.bashrc ~/.bash_aliases ~/.profile ~/.gitconfig ~/.tmux.conf ~/.ssh/config ~/.config/nvim ~/.config/starship.toml ~/.config/fastfetch ~/scripts; do
+    if [ -L "$target" ]; then
+      rm "$target" # Remove conflicting symlinks from link.sh
+    elif [ -f "$target" ]; then
+      mv "$target" "${target}.bak" # Backup factory defaults
     fi
   done
-  stow bash scripts git nvim tmux starship fastfetch
+
+  echo "  -> 💻 Stowing Core CLI Tools..."
+  echo "     (bash, scripts, git, nvim, tmux, starship, fastfetch)"
+  # Using explicit paths prevents the Stow Perl bug!
+  stow --dir="$DOTFILES_DIR" --target="$HOME" bash scripts git nvim tmux starship fastfetch
 
   # Smart detection: Only stow GUI apps if a display server is running
   if [ -n "${WAYLAND_DISPLAY:-}" ] || [ -n "${DISPLAY:-}" ]; then
     echo "  -> 🖥️  GUI Environment detected! Stowing Desktop Apps..."
-    # Removed 'icons' and 'themes' from this list!
-    stow code kitty fonts sway yazi zathura qutebrowser
+    stow --dir="$DOTFILES_DIR" --target="$HOME" code kitty fonts sway yazi zathura qutebrowser
 
-    # Dynamically download the heavy assets instead!
     if [ -f "scripts/scripts/install_themes.sh" ]; then
       chmod +x scripts/scripts/install_themes.sh
       ./scripts/scripts/install_themes.sh
