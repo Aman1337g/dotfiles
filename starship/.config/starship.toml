@@ -26,6 +26,7 @@ nord_red = "#BF616A"      # Aurora (Error)
 nord_purple = "#B48EAD"   # Aurora (Time)
 
 # --- 1. THE HOST IDENTITY BLOCK ---
+# $os and $username are physically linked because they always appear together.
 [os]
 disabled = false
 style = "bg:nord_pill_1 fg:nord_fg"
@@ -35,14 +36,14 @@ format = '[](nord_pill_1)[$symbol](bold $style)'
 show_always = true
 style_user = "bg:nord_pill_1 fg:nord_fg"
 style_root = "bg:nord_pill_1 fg:nord_red"
-format = '[ $user ]($style)'
+format = '[ $user ]($style)[ ](nord_pill_1)'
 
 # 🚀 The WSL Distro Injector
+# Now a completely independent pill. If not in WSL, it vanishes perfectly.
 [env_var.WSL_DISTRO_NAME]
 variable = "WSL_DISTRO_NAME"
-style = "bg:nord_pill_1 fg:nord_yellow"
-format = '[[($env_value) ](italic $style)[ ](nord_pill_1)]($style)'
-default = '[ ](nord_pill_1)'
+style = "bg:nord_pill_2 fg:nord_yellow"
+format = '[](nord_pill_2)[ $env_value ](italic $style)[ ](nord_pill_2)'
 
 # --- 2. THE DIRECTORY BLOCK ---
 [directory]
@@ -59,14 +60,15 @@ truncation_symbol = "…/"
 "Developer" = "󰲋 "
 
 # --- 3. THE GIT BLOCK ---
+# Branch and Status are now independent pills to prevent broken edges on clean repos.
 [git_branch]
 symbol = ""
 style = "bg:nord_pill_3 fg:nord_green"
-format = '[](nord_pill_3)[ $symbol $branch ]($style)'
+format = '[](nord_pill_3)[ $symbol $branch ]($style)[ ](nord_pill_3)'
 
 [git_status]
 style = "bg:nord_pill_3 fg:nord_red"
-format = '[$all_status$ahead_behind ]($style)[ ](nord_pill_3)'
+format = '[](nord_pill_3)[ $all_status$ahead_behind ]($style)[ ](nord_pill_3)'
 
 # --- 4. THE LANGUAGE BLOCKS ---
 [c]
