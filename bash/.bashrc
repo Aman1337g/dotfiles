@@ -58,11 +58,6 @@ fi
 [ -f "$HOME/.fzf.bash" ] && source "$HOME/.fzf.bash"
 command -v starship >/dev/null && eval "$(starship init bash)"
 
-if command -v zoxide >/dev/null; then
-  eval "$(zoxide init --cmd cd bash)"
-  bind -x '"\C-f": cdi' 2>/dev/null
-fi
-
 # Mise Integration (Dynamically manages toolchains)
 if command -v mise >/dev/null 2>&1; then
   eval "$(mise activate bash)"
@@ -81,3 +76,9 @@ z() {
 
 # Load aliases
 [ -f "$HOME/.bash_aliases" ] && . "$HOME/.bash_aliases"
+
+# Zoxide
+if command -v zoxide >/dev/null; then
+  eval "$(zoxide init --cmd cd bash)"
+  bind -x '"\C-f": cdi' 2>/dev/null
+fi

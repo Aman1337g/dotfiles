@@ -81,8 +81,15 @@ elif _has apt; then
 
   # --- 🐳 Docker Native Engine (Telemetry-Free) ---
   if ! _has docker; then
-    echo "🐳 Installing native Docker Engine..."
-    curl -k -fsSL https://get.docker.com | sudo sh
+    echo "🐳 Installing native Docker Engine (Bypassing WSL GUI Check)..."
+    curl -k -fsSL https://get.docker.com -o get-docker.sh
+
+    # 🚨 Hack the script to permanently remove the 20-second sleep penalty
+    sed -i 's/sleep 20/sleep 0/' get-docker.sh
+
+    sudo sh get-docker.sh
+    rm get-docker.sh
+
     sudo usermod -aG docker "$USER"
     echo "⚠️ Docker installed. (Log out and back in for group permissions to apply)."
   fi
