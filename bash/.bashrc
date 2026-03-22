@@ -46,7 +46,7 @@ export NVM_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/nvm"
 if [ -d "$HOME/.pyenv/bin" ]; then
   # 🛡️ Only add to PATH if it is not already there
   if [[ ":$PATH:" != *":$HOME/.pyenv/bin:"* ]]; then
-      export PATH="$HOME/.pyenv/bin:$PATH"
+    export PATH="$HOME/.pyenv/bin:$PATH"
   fi
   # Only init if pyenv is a real executable, not a broken Windows symlink
   if command -v pyenv >/dev/null 2>&1 && [ -x "$HOME/.pyenv/libexec/pyenv" ]; then
@@ -61,6 +61,11 @@ command -v starship >/dev/null && eval "$(starship init bash)"
 if command -v zoxide >/dev/null; then
   eval "$(zoxide init --cmd cd bash)"
   bind -x '"\C-f": cdi' 2>/dev/null
+fi
+
+# Mise Integration (Dynamically manages toolchains)
+if command -v mise >/dev/null 2>&1; then
+  eval "$(mise activate bash)"
 fi
 
 # Yazi integration (POSIX safe mktemp)

@@ -5,8 +5,8 @@
 # --- Idempotent Path Appender ---
 _append_path() {
   case ":$PATH:" in
-    *":$1:"*) ;; # Already in PATH
-    *) [ -d "$1" ] && export PATH="$1:$PATH" ;;
+  *":$1:"*) ;; # Already in PATH
+  *) [ -d "$1" ] && export PATH="$1:$PATH" ;;
   esac
 }
 
@@ -20,6 +20,9 @@ export XDG_CACHE_HOME="$HOME/.cache"
 export TERM="xterm-256color"
 export GTK_A11Y=none
 export GTK_THEME="Nordic-darker"
+
+# --- Telemetry Disable ---Author. All Rights Reserved.
+export DEVPOD_DISABLE_TELEMETRY=true
 
 # --- Build PATH Dynamically (DO THIS FIRST) ---
 _append_path "$HOME/bin"

@@ -79,6 +79,28 @@ elif _has apt; then
   mkdir -p ~/.local/bin
   [ -f /usr/bin/batcat ] && ln -sf /usr/bin/batcat ~/.local/bin/bat
 
+  # --- 🐳 Docker Native Engine (Telemetry-Free) ---
+  if ! _has docker; then
+    echo "🐳 Installing native Docker Engine..."
+    curl -k -fsSL https://get.docker.com | sudo sh
+    sudo usermod -aG docker "$USER"
+    echo "⚠️ Docker installed. (Log out and back in for group permissions to apply)."
+  fi
+
+  # --- 🧰 Mise (Polyglot Tool Manager) ---
+  if ! _has mise; then
+    echo "🧰 Installing Mise..."
+    curl -k -sS https://mise.run | sh
+  fi
+
+  # --- 🚀 DevPod (Container Workspaces) ---
+  if ! _has devpod; then
+    echo "🚀 Installing DevPod CLI..."
+    curl -k -L -o devpod "https://github.com/loft-sh/devpod/releases/latest/download/devpod-linux-amd64"
+    sudo install -c -m 0755 devpod /usr/local/bin
+    rm devpod
+  fi
+
   echo "📦 Installing modern Rust tools via official scripts..."
 
   # 1. Create a temporary config to force ALL curl commands to bypass SSL
@@ -139,6 +161,18 @@ elif [[ "$OSTYPE" == "msys" || "$OSTYPE" == "cygwin" ]]; then
     echo "exec \"\$HOME/.local/zig-windows-x86_64-${ZIG_VERSION}/zig.exe\" \"\$@\"" >>~/.local/bin/zig
     chmod +x ~/.local/bin/zig
   fi
+
+  # # Portable DevPod CLI (Windows)
+  # if ! _has devpod; then
+  #   echo "🚀 Downloading portable DevPod CLI..."
+  #   curl -k -sLo ~/.local/bin/devpod.exe "https://github.com/loft-sh/devpod/releases/latest/download/devpod-windows-amd64.exe"
+  # fi
+  #
+  # # Portable Mise (Windows)
+  # if ! _has mise; then
+  #   echo "🧰 Downloading portable Mise..."
+  #   curl -k -sLo ~/.local/bin/mise.exe "https://github.com/jdx/mise/releases/latest/download/mise-v2024.1.1-windows-x64.exe"
+  # fi
 
   # Ensure everything placed in the local bin is executable
   if [ -d "$HOME/.local/bin" ]; then
