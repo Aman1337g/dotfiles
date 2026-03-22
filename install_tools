@@ -15,7 +15,7 @@ BREW_PACKAGES=(
 )
 
 APT_PACKAGES=(
-  eza bat fzf neovim curl unzip stow
+  eza bat fzf neovim curl unzip stow git-delta
 )
 
 APK_PACKAGES=(
@@ -27,6 +27,7 @@ WINGET_PACKAGES=(
   sharkdp.bat
   junegunn.fzf
   ajeetdsouza.zoxide
+  dandavison.delta
 )
 
 TERMUX_PACKAGES=(
