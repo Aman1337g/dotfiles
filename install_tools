@@ -133,6 +133,11 @@ elif [[ "$OSTYPE" == "msys" || "$OSTYPE" == "cygwin" ]]; then
     curl -k -sLo ~/.local/zig.zip "https://ziglang.org/download/${ZIG_VERSION}/zig-windows-x86_64-${ZIG_VERSION}.zip"
     unzip -q -o ~/.local/zig.zip -d ~/.local/
     rm ~/.local/zig.zip
+
+    # Safely create a Bash wrapper to keep the PATH clean
+    echo '#!/usr/bin/env bash' >~/.local/bin/zig
+    echo "exec \"\$HOME/.local/zig-windows-x86_64-${ZIG_VERSION}/zig.exe\" \"\$@\"" >>~/.local/bin/zig
+    chmod +x ~/.local/bin/zig
   fi
 
   # Ensure everything placed in the local bin is executable
