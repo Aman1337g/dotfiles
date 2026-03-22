@@ -15,7 +15,7 @@ BREW_PACKAGES=(
 )
 
 APT_PACKAGES=(
-  eza bat fzf neovim curl unzip stow git-delta
+  eza bat fzf neovim curl unzip stow git-delta zathura
 )
 
 APK_PACKAGES=(
