@@ -55,7 +55,22 @@ if [ -d "$HOME/.pyenv/bin" ]; then
 fi
 
 # UI & Prompt
-[ -f "$HOME/.fzf.bash" ] && source "$HOME/.fzf.bash"
+
+# ==========================================
+# 🔍 FZF KEYBINDINGS (The Ctrl+R Upgrade)
+# ==========================================
+if command -v fzf >/dev/null 2>&1; then
+  # Debian/Ubuntu apt location
+  if [ -f /usr/share/doc/fzf/examples/key-bindings.bash ]; then
+    source /usr/share/doc/fzf/examples/key-bindings.bash
+  # Homebrew location
+  elif [ -f "$(brew --prefix 2>/dev/null)/opt/fzf/shell/key-bindings.bash" ]; then
+    source "$(brew --prefix 2>/dev/null)/opt/fzf/shell/key-bindings.bash"
+  # Standard git clone location
+  elif [ -f ~/.fzf.bash ]; then
+    source ~/.fzf.bash
+  fi
+fi
 command -v starship >/dev/null && eval "$(starship init bash)"
 
 # Mise Integration (Dynamically manages toolchains)
