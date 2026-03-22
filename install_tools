@@ -35,6 +35,12 @@ TERMUX_PACKAGES=(
 )
 
 # ---------------------------------------------------------
+# 📌 TOOL VERSIONS (Update these to upgrade your environment)
+# ---------------------------------------------------------
+NVIM_VERSION="v0.11.6"
+ZIG_VERSION="0.13.0"
+
+# ---------------------------------------------------------
 # ⚙️ THE INSTALLATION ENGINE
 # (No need to edit below this line for standard packages)
 # ---------------------------------------------------------
@@ -111,12 +117,22 @@ elif [[ "$OSTYPE" == "msys" || "$OSTYPE" == "cygwin" ]]; then
   # 3. Portable Neovim (Bypasses Admin MSI)
   if ! _has nvim; then
     echo "📝 Downloading portable Neovim..."
-    curl -k -sLo ~/.local/nvim.zip https://github.com/neovim/neovim/releases/download/v0.11.6/nvim-win64.zip
+    curl -k -sLo ~/.local/nvim.zip "https://github.com/neovim/neovim/releases/download/${NVIM_VERSION}/nvim-win64.zip"
     unzip -q -o ~/.local/nvim.zip -d ~/.local/
     rm ~/.local/nvim.zip
 
-    # Safely copy the executable and KEEP the .exe extension
-    cp ~/.local/nvim-win64/bin/nvim.exe ~/.local/bin/nvim.exe
+    # Safely create a Bash wrapper so the binary isn't orphaned from its DLLs
+    echo '#!/usr/bin/env bash' >~/.local/bin/nvim
+    echo 'exec "$HOME/.local/nvim-win64/bin/nvim.exe" "$@"' >>~/.local/bin/nvim
+    chmod +x ~/.local/bin/nvim
+  fi
+
+  # 4. Portable Zig (C Compiler for Neovim Treesitter)
+  if ! _has zig; then
+    echo "⚡ Downloading portable Zig compiler..."
+    curl -k -sLo ~/.local/zig.zip "https://ziglang.org/download/${ZIG_VERSION}/zig-windows-x86_64-${ZIG_VERSION}.zip"
+    unzip -q -o ~/.local/zig.zip -d ~/.local/
+    rm ~/.local/zig.zip
   fi
 
   # Ensure everything placed in the local bin is executable
