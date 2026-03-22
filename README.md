@@ -27,7 +27,7 @@ If you prefer to review the scripts before running them, you can bootstrap the s
 **1. Clone the Repository**
 
 ```bash
-git clone [https://github.com/Aman1337g/dotfiles.git](https://github.com/Aman1337g/dotfiles.git) ~/.dotfiles
+git clone https://github.com/Aman1337g/dotfiles.git ~/.dotfiles
 cd ~/.dotfiles
 ```
 

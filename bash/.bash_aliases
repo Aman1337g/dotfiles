@@ -334,3 +334,6 @@ alias wtl="sed -i 's/\r$//'"
 alias upgrade='~/scripts/upgrade'
 alias clean='~/scripts/cleanup'
 alias update-all='upgrade && clean'
+
+# Windows "GitOps" Deployment
+alias deploy='~/.dotfiles/setup'

@@ -1,12 +1,14 @@
 #!/usr/bin/env bash
 # link - Fallback symlink generator for systems without GNU Stow
 
+# 🚨 FORCE GIT BASH TO USE REAL NTFS SYMLINKS ON WINDOWS
+# export MSYS="winsymlinks:nativestrict"
+
 echo "========================================"
 echo "🔗 Starting Manual Symlink Fallback"
 echo "========================================"
 
 DOTFILES_DIR="$HOME/.dotfiles"
-# Generate a timestamp for safe, non-overwriting backups
 TIMESTAMP=$(date +%Y%m%d_%H%M%S)
 
 # Helper function to create links securely
@@ -23,9 +25,11 @@ link_file() {
     mv "$dest" "${dest}.${TIMESTAMP}.bak"
   fi
 
-  # Create or update the symlink (-s soft, -n treat dest as normal file, -f force)
+  # Create or update the symlink
   echo "  🔗 Linking $(basename "$dest") -> $src"
-  ln -snf "$src" "$dest"
+  # We use rm -f first because nativestrict will fail if a fake symlink copy already exists
+  rm -f "$dest" 2>/dev/null
+  ln -s "$src" "$dest"
 }
 
 echo "💻 Linking Core Configs..."
@@ -39,7 +43,6 @@ link_file "$DOTFILES_DIR/bash/.profile" "$HOME/.profile"
 link_file "$DOTFILES_DIR/git/.gitconfig" "$HOME/.gitconfig"
 if [ -f "$DOTFILES_DIR/git/.ssh/config" ]; then
   link_file "$DOTFILES_DIR/git/.ssh/config" "$HOME/.ssh/config"
-  # SECURE SSH: Enforce strict permissions so SSH doesn't block connections
   chmod 700 "$HOME/.ssh"
   chmod 600 "$HOME/.ssh/config"
 fi
@@ -69,6 +72,8 @@ if [[ "$OSTYPE" == "msys" || "$OSTYPE" == "cygwin" ]]; then
     cp "$WT_DEST" "${WT_DEST}.${TIMESTAMP}.bak"
   fi
 
+  # NOTE: We MUST copy this, not link it. UWP apps like Windows Terminal
+  # often break or delete symlinks when they auto-save their own settings.
   echo "  📝 Copying settings.json to LocalState"
   cp "$DOTFILES_DIR/windows-terminal/settings.json" "$WT_DEST"
 fi
