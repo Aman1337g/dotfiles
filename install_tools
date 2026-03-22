@@ -114,8 +114,14 @@ elif [[ "$OSTYPE" == "msys" || "$OSTYPE" == "cygwin" ]]; then
     curl -k -sLo ~/.local/nvim.zip https://github.com/neovim/neovim/releases/download/v0.11.6/nvim-win64.zip
     unzip -q -o ~/.local/nvim.zip -d ~/.local/
     rm ~/.local/nvim.zip
-    # Link the executable into your PATH
-    ln -sf ~/.local/nvim-win64/bin/nvim.exe ~/.local/bin/nvim
+
+    # Safely copy the executable and KEEP the .exe extension
+    cp ~/.local/nvim-win64/bin/nvim.exe ~/.local/bin/nvim.exe
+  fi
+
+  # Ensure everything placed in the local bin is executable
+  if [ -d "$HOME/.local/bin" ]; then
+    chmod +x "$HOME/.local/bin"/*
   fi
 
   echo "✅ Windows portable setup complete."
