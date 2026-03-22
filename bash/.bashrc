@@ -1,3 +1,9 @@
+# Safely load .profile variables ONLY once to prevent infinite PATH growth
+if [ -z "$PROFILE_LOADED" ] && [ -f "$HOME/.profile" ]; then
+  export PROFILE_LOADED=1
+  source "$HOME/.profile"
+fi
+
 # ==========================================
 # ~/.bashrc - Interactive Shell
 # ==========================================
@@ -36,13 +42,16 @@ export NVM_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/nvm"
 [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
 [ -s "$NVM_DIR/bash_completion" ] && . "$NVM_DIR/bash_completion"
 
-# Pyenv (Safe Initialization for Windows Git Bash symlink bug)
+# Pyenv (Safe Initialization & Idempotent PATH for Windows Git Bash)
 if [ -d "$HOME/.pyenv/bin" ]; then
-    export PATH="$HOME/.pyenv/bin:$PATH"
-    # Only init if pyenv is a real executable, not a broken Windows symlink
-    if command -v pyenv >/dev/null 2>&1 && [ -x "$HOME/.pyenv/libexec/pyenv" ]; then
-        eval "$(pyenv init -)"
-    fi
+  # 🛡️ Only add to PATH if it is not already there
+  if [[ ":$PATH:" != *":$HOME/.pyenv/bin:"* ]]; then
+      export PATH="$HOME/.pyenv/bin:$PATH"
+  fi
+  # Only init if pyenv is a real executable, not a broken Windows symlink
+  if command -v pyenv >/dev/null 2>&1 && [ -x "$HOME/.pyenv/libexec/pyenv" ]; then
+    eval "$(pyenv init -)"
+  fi
 fi
 
 # UI & Prompt

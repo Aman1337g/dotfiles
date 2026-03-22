@@ -21,7 +21,6 @@ md() { mkdir -p "$1" && cd "$1" || return 1; }
 if _has eza; then
   alias ls='eza -al --color=always --group-directories-first'
   alias la='eza -a --color=always --group-directories-first'
-  # alias ll='eza -l --color=always --group-directories-first'
   alias lt='eza -aT --color=always --group-directories-first'
   alias l.='eza -a | grep "^\."'
   alias l..='eza -al --color=always --group-directories-first ../../'
@@ -89,7 +88,6 @@ alias clone='git clone'
 # --- Git Workflow Functions ---
 
 _get_current_branch() {
-  # >&2 forces the error to print to the screen, preventing it from being swallowed
   git rev-parse --is-inside-work-tree >/dev/null 2>&1 || {
     echo "❌ Not a git repo" >&2
     return 1
@@ -107,13 +105,11 @@ _get_current_branch() {
 
 _get_ado_ticket() {
   local branch
-  # Still fail if we aren't in a git repo or have detached HEAD
   branch=$(_get_current_branch) || return 1
 
   if [[ "$branch" =~ (ADO-[0-9]+) ]]; then
     echo "${BASH_REMATCH[1]}"
   fi
-  # Return 0 (success) implicitly even if no ticket is found
 }
 
 dc() {
@@ -144,7 +140,7 @@ dc() {
 
   git commit -m "$commit_format"
 
-  set +f # Re-enable globbing so the rest of your terminal works normally
+  set +f # Re-enable globbing
 }
 
 pc() {
@@ -163,9 +159,7 @@ gbc() {
   git branch --merged | grep -E -v "(^\*|main|master|develop)" | xargs -r git branch -d
 }
 
-# gtog: "Git Toggle" - Swaps the local repository identity between Work and Personal
 gtog() {
-  # 1. Fail gracefully if not in a repository
   git rev-parse --is-inside-work-tree >/dev/null 2>&1 || {
     echo "❌ Not a git repo" >&2
     return 1
@@ -176,19 +170,15 @@ gtog() {
   personal_email="97891757+Aman1337g@users.noreply.github.com"
   name="Aman Kumar Gupta"
 
-  # 2. 🛡️ Securely fetch the work email from your untracked local file!
   if [ -f "$HOME/.gitconfig-work" ]; then
-    # Extracts the email dynamically so it is never hardcoded in this public script
     work_email=$(git config -f "$HOME/.gitconfig-work" user.email)
   else
     echo "❌ Error: ~/.gitconfig-work not found. Cannot determine work email." >&2
     return 1
   fi
 
-  # Get the *currently active* email for this specific directory
   current_email=$(git config user.email)
 
-  # 3. Toggle logic using --local to override global/includeIf settings
   if [ "$current_email" = "$work_email" ]; then
     echo "🔄 Switching to 👤 PERSONAL profile for this repository..."
     git config --local user.email "$personal_email"
@@ -199,7 +189,6 @@ gtog() {
     git config --local user.name "$name"
   fi
 
-  # 4. Verify and print the result
   echo "✅ Identity set: $(git config user.name) <$(git config user.email)>"
 }
 
@@ -340,7 +329,6 @@ alias dwmk='dconf dump /org/gnome/desktop/wm/keybindings/ > "$HOME/.dotfiles/deb
 alias qu='cd "$HOME/qutebrowser/" && scripts/mkvenv.py --update && exit'
 alias rr="curl -s -L https://raw.githubusercontent.com/keroserene/rickrollrc/master/roll.sh | bash"
 alias wtl="sed -i 's/\r$//'"
-alias fp='fzf --preview="bat --color=always {}"'
 
 # System Maintenance
 alias upgrade='~/scripts/upgrade'
