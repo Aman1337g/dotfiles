@@ -51,10 +51,11 @@ if [ -z "$query" ] || echo "$query" | grep -q -i "No Definitions Found"; then
   send_error "No definitions found for '$WORD'."
 fi
 
+# Extract up to 3 definitions and their examples
 definitions=$(echo "$query" | jq -r '
   if type == "array" and length > 0 then
-    [.[].meanings[] | { pos: .partOfSpeech, def: .definitions[0].definition }][:5] |
-    to_entries[] | "\(.value.pos): \(.value.def)"
+    [ .[].meanings[] | .partOfSpeech as $pos | .definitions[] | {pos: $pos, def: .definition, ex: .example} ] | .[:3] |
+    .[] | "  • \(.pos): \(.def)" + (if (.ex != null and .ex != "") then "\n      Example: \"\(.ex)\"" else "" end)
   else
     empty
   end
@@ -65,7 +66,7 @@ definitions=$(echo "$query" | jq -r '
 # --- Output Presentation ---
 if [ "$IS_CLI" -eq 1 ]; then
   echo -e "\n📖 Definition of \033[1;32m$WORD\033[0m:"
-  echo "$definitions" | while read -r line; do echo "  • $line"; done
+  echo "$definitions"
   echo ""
 else
   command -v zenity >/dev/null 2>&1 || send_error "Zenity not installed for GUI display."
