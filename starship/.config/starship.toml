@@ -26,24 +26,27 @@ nord_red = "#BF616A"      # Aurora (Error)
 nord_purple = "#B48EAD"   # Aurora (Time)
 
 # --- 1. THE HOST IDENTITY BLOCK ---
-# $os and $username are physically linked because they always appear together.
+# OS and Username are now completely independent pills.
+# This prevents "broken edges" on ephemeral environments (like Termux or Containers) 
+# where the username module might dynamically hide itself.
+
 [os]
 disabled = false
 style = "bg:nord_pill_1 fg:nord_fg"
-format = '[](nord_pill_1)[$symbol](bold $style)'
+format = '[](nord_pill_1)[$symbol](bold $style)[ ](nord_pill_1)'
 
 [username]
 show_always = true
 style_user = "bg:nord_pill_1 fg:nord_fg"
 style_root = "bg:nord_pill_1 fg:nord_red"
-format = '[ $user ]($style)[ ](nord_pill_1)'
+format = '[](nord_pill_1)[ $user ]($style)[ ](nord_pill_1)'
 
 # 🚀 The WSL Distro Injector
-# Now a completely independent pill. If not in WSL, it vanishes perfectly.
 [env_var.WSL_DISTRO_NAME]
 variable = "WSL_DISTRO_NAME"
 style = "bg:nord_pill_2 fg:nord_yellow"
 format = '[](nord_pill_2)[ $env_value ](italic $style)[ ](nord_pill_2)'
+
 
 # --- 2. THE DIRECTORY BLOCK ---
 [directory]
