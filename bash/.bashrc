@@ -19,15 +19,15 @@ for completion in /usr/share/bash-completion/bash_completion /etc/bash_completio
   [ -f "$completion" ] && . "$completion" && break
 done
 
-# --- History Management ---
+# ==========================================
+# 1. Shell Options & History
+# ==========================================
 export HISTCONTROL=ignoreboth:erasedups
 export HISTSIZE=10000
 export HISTFILESIZE=50000
-shopt -s histappend
+shopt -s histappend checkwinsize cdspell extglob
 PROMPT_COMMAND='history -a'
 
-# --- Shell Options & Keybindings ---
-shopt -s checkwinsize cdspell extglob
 set -o vi
 bind "set bell-style none"
 
@@ -35,14 +35,49 @@ bind "set bell-style none"
 [ -f "$HOME/scripts/motivation" ] && bind '"\em":"'$HOME'/scripts/motivation\n"'
 [ -f "$HOME/scripts/define_word" ] && bind '"\ee":"'$HOME'/scripts/define_word\n"'
 
-# --- Tool Initialization (Silent fallback if missing) ---
+# ==========================================
+# 2. SSH Agent (The Final Fix)
+# ==========================================
+# Fallback: Get username from system if $USER is unset
+_UNAME=${USER:-$(id -un)}
 
-# NVM (Added a fallback in case XDG_CONFIG_HOME is empty on a fresh OS)
+# Use the safe, discovered username for the socket
+export SSH_AUTH_SOCK="/tmp/ssh-agent-$_UNAME.sock"
+
+# Start agent only if the socket file is missing
+if [ ! -S "$SSH_AUTH_SOCK" ]; then
+  # Kill only agents belonging to THIS discovered user
+  pkill -u "$_UNAME" ssh-agent >/dev/null 2>&1
+  rm -f "$SSH_AUTH_SOCK"
+  ssh-agent -a "$SSH_AUTH_SOCK" >/dev/null
+fi
+
+# Key Loader Helper
+load_ssh_key() {
+  local key=$1
+  if [ -f "$key" ]; then
+    # Check if key is already in agent by fingerprint
+    if ! ssh-add -l | grep -q "$(ssh-keygen -lf "$key" | awk '{print $2}')"; then
+      ssh-add "$key" 2>/dev/null
+    fi
+  fi
+}
+
+# Load keys into the agent
+load_ssh_key ~/.ssh/id_ed25519
+load_ssh_key ~/.ssh/wsl_spglobal
+load_ssh_key ~/.ssh/id_ed25519_amandev
+
+# ==========================================
+# 3. Tool Initialization & Wrappers
+# ==========================================
+
+# --- NVM (Added a fallback in case XDG_CONFIG_HOME is empty on a fresh OS) ---
 export NVM_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/nvm"
 [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
 [ -s "$NVM_DIR/bash_completion" ] && . "$NVM_DIR/bash_completion"
 
-# Pyenv (Safe Initialization & Idempotent PATH for Windows Git Bash)
+# --- Pyenv (Safe Initialization & Idempotent PATH for Windows Git Bash) ---
 if [ -d "$HOME/.pyenv/bin" ]; then
   # 🛡️ Only add to PATH if it is not already there
   if [[ ":$PATH:" != *":$HOME/.pyenv/bin:"* ]]; then
@@ -54,11 +89,7 @@ if [ -d "$HOME/.pyenv/bin" ]; then
   fi
 fi
 
-# UI & Prompt
-
-# ==========================================
-# 🔍 FZF KEYBINDINGS (The Ctrl+R Upgrade)
-# ==========================================
+# --- FZF Keybindings (The Ctrl+R Upgrade) ---
 if command -v fzf >/dev/null 2>&1; then
   # Debian/Ubuntu apt location
   if [ -f /usr/share/doc/fzf/examples/key-bindings.bash ]; then
@@ -71,14 +102,8 @@ if command -v fzf >/dev/null 2>&1; then
     source ~/.fzf.bash
   fi
 fi
-command -v starship >/dev/null && eval "$(starship init bash)"
 
-# Mise Integration (Dynamically manages toolchains)
-if command -v mise >/dev/null 2>&1; then
-  eval "$(mise activate bash)"
-fi
-
-# Yazi integration (POSIX safe mktemp)
+# --- Yazi Integration (POSIX safe mktemp wrapper) ---
 z() {
   local tmp cwd
   tmp="$(mktemp -t yazi-cwd.XXXXXX)" || return 1
@@ -89,11 +114,21 @@ z() {
   rm -f -- "$tmp"
 }
 
-# Load aliases
-[ -f "$HOME/.bash_aliases" ] && . "$HOME/.bash_aliases"
+# --- Mise Integration (Dynamically manages toolchains) ---
+if command -v mise >/dev/null 2>&1; then
+  eval "$(mise activate bash)"
+fi
 
-# Zoxide
+# --- Zoxide ---
 if command -v zoxide >/dev/null; then
   eval "$(zoxide init --cmd cd bash)"
   bind -x '"\C-f": cdi' 2>/dev/null
 fi
+
+# --- UI Prompt (Starship) ---
+command -v starship >/dev/null && eval "$(starship init bash)"
+
+# ==========================================
+# 4. Aliases
+# ==========================================
+[ -f "$HOME/.bash_aliases" ] && . "$HOME/.bash_aliases"

@@ -21,7 +21,7 @@ export TERM="xterm-256color"
 export GTK_A11Y=none
 export GTK_THEME="Nordic-darker"
 
-# --- Telemetry Disable ---Author. All Rights Reserved.
+# --- Telemetry Disable (Author. All Rights Reserved.) ---
 export DEVPOD_DISABLE_TELEMETRY=true
 
 # --- Build PATH Dynamically (DO THIS FIRST) ---

@@ -6,6 +6,11 @@
     name = Aman Kumar Gupta
     email = 97891757+Aman1337g@users.noreply.github.com
 
+[credential]
+    helper = store
+    # Use GCM for Windows if available, else keep 'store'
+    # helper = /mnt/c/Program\ Files/Git/mingw64/bin/git-credential-manager.exe
+
 [init]
     defaultBranch = main
 
@@ -52,19 +57,29 @@
 # 🛑 The Magic Switch for Work Repos
 # ==========================================
 
-# 1. Catch the folder when you are using WSL
-[includeIf "gitdir:/mnt/c/Users/"]
+# 1. Matches if the .git folder is anywhere inside /mnt/c/Users/
+[includeIf "gitdir/i:/mnt/c/Users/"]
     path = ~/.gitconfig-work
 
 # 2. Catch the exact same folder when you are using Windows Git Bash
-[includeIf "gitdir:C:/Users/"]
+[includeIf "gitdir/i:C:/Users/"]
     path = ~/.gitconfig-work
 
 
 
 ; # ~/.gitconfig-work
 ; [user]
-;     email = org@mail
+;     name = Aman Kumar Gupta
+;     email = <org-email> 
 ;
-; [credential]
-;     helper = store
+; # Automatically rewrite standard URLs to use the 'spgi' SSH alias
+; [url "git@spgi:spglobal"]
+;     insteadOf = git@github.com:spglobal
+;
+; [core]
+;     # Fallback: Force work key if rewrite fails
+;     sshCommand = "ssh -i ~/.ssh/wsl_spglobal -o IdentitiesOnly=yes"
+;
+; [credential "https://github.com"]
+;     # Your username discovered from 'ssh -T git@spgi'
+;     username = <username>
