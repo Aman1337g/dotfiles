@@ -287,9 +287,34 @@ crp() {
 
 pdf() {
   local file
-  file=$(find . -maxdepth 5 -name "*.pdf" | fzf -e -i)
-  [ -n "$file" ] && zathura --mode fullscreen --config-dir="$HOME/.config/zathura" "$file" >/dev/null 2>&1 &
-  disown
+  # Set your preferred viewer here: "evince" or "zathura"
+  local VIEWER="evince"
+
+  # 1. Find and select the PDF (case-insensitive, hiding permission errors)
+  file=$(find . -maxdepth 5 -iname "*.pdf" 2>/dev/null | fzf -e -i --prompt="Open PDF ($VIEWER)> ")
+
+  # 2. Execute only if a file was selected
+  if [ -n "$file" ]; then
+    if [ "$VIEWER" = "evince" ]; then
+      if ! command -v evince &>/dev/null; then
+        echo "Error: evince is not installed."
+        return 1
+      fi
+      # Launch Evince safely in the background
+      (evince --fullscreen "$file" >/dev/null 2>&1 &)
+
+    elif [ "$VIEWER" = "zathura" ]; then
+      if ! command -v zathura &>/dev/null; then
+        echo "Error: zathura is not installed."
+        return 1
+      fi
+      # Launch Zathura with your custom ultimate config
+      (zathura --mode fullscreen --config-dir="$HOME/.config/zathura" "$file" >/dev/null 2>&1 &)
+
+    else
+      echo "Error: Unknown viewer set in the function."
+    fi
+  fi
 }
 
 extract() {

@@ -69,7 +69,8 @@ set notification-warning-fg "#000000"
 
 # --- 5. NAVIGATION & ZOOM ---
 # Smooth scrolling steps
-set scroll-step 40
+# set scroll-step 40
+set smooth-scroll true
 
 # Fine-grained zoom control
 set zoom-min 10
