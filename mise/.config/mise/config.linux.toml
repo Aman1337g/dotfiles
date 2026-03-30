@@ -1,0 +1,5 @@
+# Only installed on native Linux
+[tools]
+ripgrep = "latest"
+fd = "latest"
+python = "3.12"

@@ -1,0 +1,51 @@
+#!/usr/bin/env bash
+# sync_certs - Automatically pull Zscaler certs from Windows into WSL/Linux
+
+echo "========================================"
+echo "🔐 Starting Windows-to-Linux Certificate Sync"
+echo "========================================"
+
+# 1. Verify we are in an environment that can talk to Windows
+if ! command -v powershell.exe >/dev/null 2>&1; then
+  echo "❌ powershell.exe not found."
+  echo "This script must be run inside WSL to extract certificates from Windows."
+  exit 1
+fi
+
+echo "🔍 Scanning Windows Certificate Store for 'Zscaler' Root CAs..."
+
+# 2. The Interop Magic: 
+# Tell PowerShell to search both LocalMachine and CurrentUser for Zscaler certs,
+# extract their raw binary data, and format them perfectly into Base64 PEM blocks.
+# We pipe it through `tr -d '\r'` to instantly kill the Windows ghost characters (^M)!
+CERTS=$(powershell.exe -NoProfile -Command '
+  $certs = Get-ChildItem -Path Cert:\LocalMachine\Root, Cert:\CurrentUser\Root -ErrorAction SilentlyContinue | Where-Object { $_.Subject -match "Zscaler" }
+  if ($certs) {
+      $certs | ForEach-Object {
+          "-----BEGIN CERTIFICATE-----`n" + [Convert]::ToBase64String($_.RawData, "InsertLineBreaks") + "`n-----END CERTIFICATE-----"
+      }
+  }
+' | tr -d '\r')
+
+# 3. Validation
+if [ -z "$CERTS" ]; then
+  echo "⚠️ No Zscaler certificates found in the Windows store."
+  exit 0
+fi
+
+# 4. Injection
+echo "✅ Certificates extracted successfully! Injecting into Linux OS..."
+
+CERT_DIR="/usr/local/share/ca-certificates/zscaler"
+sudo mkdir -p "$CERT_DIR"
+
+# Write the combined PEM blocks into a single .crt file
+echo "$CERTS" | sudo tee "$CERT_DIR/zscaler-windows.crt" > /dev/null
+
+# 5. System Update
+echo "🔄 Updating Linux CA Trust Store..."
+sudo update-ca-certificates
+
+echo "========================================"
+echo "🎉 Zscaler certificates successfully synced and trusted!"
+echo "========================================"

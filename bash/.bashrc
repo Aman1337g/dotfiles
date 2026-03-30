@@ -116,6 +116,23 @@ z() {
 
 # --- Mise Integration (Dynamically manages toolchains) ---
 if command -v mise >/dev/null 2>&1; then
+  # 1. Precise Environment Detection for config.*.toml mapping
+  if [ -n "$TERMUX_VERSION" ]; then
+    export MISE_ENV="termux"
+    # Docker/Devpod creates a hidden /.dockerenv or /.containerenv file at root of fs
+  elif [ -f /.dockerenv ] || [ -f /run/.containerenv ]; then
+    export MISE_ENV="container"
+  elif grep -qi microsoft /proc/version 2>/dev/null; then
+    export MISE_ENV="linux" # Treat WSL exactly like native Linux
+  elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
+    export MISE_ENV="linux"
+  elif [[ "$OSTYPE" == "darwin"* ]]; then
+    export MISE_ENV="mac"
+  elif [[ "$OSTYPE" == "msys" || "$OSTYPE" == "cygwin" ]]; then
+    export MISE_ENV="windows"
+  fi
+
+  # 2. Activate
   eval "$(mise activate bash)"
 fi
 

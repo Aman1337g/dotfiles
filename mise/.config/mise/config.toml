@@ -1,0 +1,10 @@
+# Everyone gets these, no matter the OS
+[tools]
+neovim = "latest"
+starship = "latest"
+fzf = "latest"
+zoxide = "latest"
+eza = "latest"
+bat = "latest"
+yazi = "latest"
+usage = "latest"

@@ -3,7 +3,7 @@
 format = """
 $os$username$env_var\
 $directory\
-$git_branch$git_status\
+${custom.git_pill}\
 $c$rust$golang$nodejs$php$java$kotlin$haskell$python\
 $docker_context\
 $time\
@@ -71,7 +71,8 @@ format = '[](nord_pill_3)[ $symbol $branch ]($style)[ ](nord_pill_3)'
 
 [git_status]
 style = "bg:nord_pill_3 fg:nord_red"
-format = '[](nord_pill_3)[ $all_status$ahead_behind ]($style)[ ](nord_pill_3)'
+# Added 'condition' logic implicitly by ensuring format only triggers on content
+format = '([](nord_pill_3)[$all_status$ahead_behind]($style)[ ](nord_pill_3))'
 
 # --- 4. THE LANGUAGE BLOCKS ---
 [c]
@@ -97,7 +98,7 @@ format = '[](nord_blue)[ $symbol( $version) ]($style)[ ](nord_blue)'
 [python]
 symbol = ""
 style = "bg:nord_blue fg:nord_bg"
-format = '[](nord_blue)[ $symbol( $version) ]($style)[ ](nord_blue)'
+format = '([](nord_blue)[ $symbol( $version) ]($style)[ ](nord_blue))'
 
 [php]
 symbol = ""
@@ -117,9 +118,10 @@ format = '[](nord_cyan)[ $symbol( $context) ]($style)[ ](nord_cyan)'
 
 [time]
 disabled = false
-time_format = "%I:%M %p" # 12-hour format
+time_format = "%I:%M %p"
 style = "bg:nord_purple fg:nord_bg"
-format = '[](nord_purple)[  $time ]($style)[ ](nord_purple)'
+# The outer brackets () ensure the whole pill vanishes if it can't fit
+format = '([](nord_purple)[  $time ]($style)[](nord_purple))'
 
 # --- 6. PROMPT CHARACTER ---
 [line_break]

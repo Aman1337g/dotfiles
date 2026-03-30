@@ -1,5 +1,32 @@
 #!/usr/bin/env bash
-# Aman's Ultimate Environment Bootstrapper
+# Aman's Ultimate Environment Bootstrapper (Interactive & Automatable)
+
+# ==========================================
+# ⚙️ 1. ARGUMENT PARSING & FLAGS
+# ==========================================
+AUTO_MODE=false
+ENV_TYPE=""
+INSTALL_GUI=false
+
+while [[ "$#" -gt 0 ]]; do
+  case $1 in
+  --auto) AUTO_MODE=true ;;
+  --env=*) ENV_TYPE="${1#*=}" ;;
+  --gui) INSTALL_GUI=true ;;
+  --help)
+    echo "Usage: ./setup [OPTIONS]"
+    echo "  --auto            Run without interactive prompts"
+    echo "  --env=<type>      Force environment (wsl, linux, mac, termux, container, windows)"
+    echo "  --gui             Install Desktop/GUI applications"
+    exit 0
+    ;;
+  *)
+    echo "Unknown parameter passed: $1"
+    exit 1
+    ;;
+  esac
+  shift
+done
 
 echo "========================================"
 echo "🚀 Starting System Bootstrap..."
@@ -7,15 +34,55 @@ echo "========================================"
 
 # --- 📱 Termux Pre-Flight Check ---
 if [ -n "$TERMUX_VERSION" ]; then
+  ENV_TYPE="termux"
   if ! command -v git >/dev/null 2>&1; then
     echo "📱 Termux detected without Git. Installing prerequisite..."
     pkg update -y && pkg install git -y
   fi
 fi
 
+# ==========================================
+# 🗣️ 2. INTERACTIVE MENU (If not in --auto mode)
+# ==========================================
+if [ "$AUTO_MODE" = false ]; then
+  echo ""
+  echo "🤖 Welcome to the Environment Setup."
+
+  if [ -z "$ENV_TYPE" ]; then
+    echo "Select your target environment:"
+    echo "  1) Linux (Native/Debian/Arch)"
+    echo "  2) WSL (Windows Subsystem for Linux)"
+    echo "  3) macOS"
+    echo "  4) DevPod / Container (Ephemeral)"
+    echo "  5) Windows Git Bash"
+    read -p "Enter choice [1-5] (Default: 1/Linux): " env_choice
+    case $env_choice in
+    1) ENV_TYPE="linux" ;;
+    2) ENV_TYPE="wsl" ;;
+    3) ENV_TYPE="mac" ;;
+    4) ENV_TYPE="container" ;;
+    5) ENV_TYPE="windows" ;;
+    *) ENV_TYPE="linux" ;; # Default
+    esac
+  fi
+
+  if [ "$ENV_TYPE" = "linux" ] || [ "$ENV_TYPE" = "mac" ]; then
+    read -p "🖥️  Install GUI Desktop Apps (Kitty, Zathura, etc.)? (y/n): " gui_choice
+    if [[ "$gui_choice" =~ ^[Yy]$ ]]; then
+      INSTALL_GUI=true
+    fi
+  fi
+fi
+
+export ENV_TYPE
+export INSTALL_GUI
+export AUTO_MODE
+
 DOTFILES_DIR="$HOME/.dotfiles"
 
-# 1. Clone the repository if it doesn't exist
+# ==========================================
+# 📦 3. CLONE DOTFILES
+# ==========================================
 if [ ! -d "$DOTFILES_DIR" ]; then
   echo "📦 Cloning dotfiles repository..."
   git clone https://github.com/Aman1337g/dotfiles.git "$DOTFILES_DIR"
@@ -24,39 +91,48 @@ else
 fi
 
 cd "$DOTFILES_DIR" || exit 1
-
-# 2. Run the universal installer
-echo ""
-echo "🛠️  Running Universal Tool Installer..."
 chmod +x install_tools link setup
-./install_tools
 
-# 3. Apply configurations based on the environment
+# ==========================================
+# 🔗 4. LINKING (Done BEFORE installing tools so Mise has its config)
+# ==========================================
 echo ""
 echo "========================================"
 echo "🔗 Linking Dotfiles Configuration"
 echo "========================================"
 
-if command -v stow >/dev/null 2>&1; then
+# Ensure stow is installed before trying to use it if on a brand new container
+if ! command -v stow >/dev/null 2>&1; then
+  echo "⚠️ GNU Stow not found. We will install it during the tool phase."
+  echo "Falling back to safe link script for initial bootstrap..."
+  ./link
+else
   echo "✅ GNU Stow detected. Proceeding with modular links..."
-
   echo "  -> 🧹 Clearing runway for Stow (Handling old symlinks and defaults)..."
-  # We remove old symlinks or backup physical files to give Stow a blank canvas
-  for target in ~/.bashrc ~/.bash_aliases ~/.profile ~/.gitconfig ~/.tmux.conf ~/.ssh/config ~/.config/nvim ~/.config/starship.toml ~/.config/fastfetch ~/scripts; do
+
+  # 1. Expanded list of ALL targets (CLI + GUI)
+  STOW_TARGETS=(
+    ~/.bashrc ~/.bash_aliases ~/.profile ~/.gitconfig ~/.tmux.conf ~/.ssh/config
+    ~/.config/nvim ~/.config/starship.toml ~/.config/fastfetch ~/scripts ~/.config/mise
+    ~/.config/qutebrowser ~/.config/kitty ~/.config/sway ~/.config/yazi ~/.config/zathura
+  )
+
+  TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+
+  for target in "${STOW_TARGETS[@]}"; do
     if [ -L "$target" ]; then
-      rm "$target" # Remove conflicting symlinks from link.sh
-    elif [ -f "$target" ]; then
-      mv "$target" "${target}.bak" # Backup factory defaults
+      rm "$target" # Safely remove old symlinks
+    elif [ -f "$target" ] || [ -d "$target" ]; then
+      echo "  📦 Backing up $target to ${target}_${TIMESTAMP}.bak"
+      mv "$target" "${target}_${TIMESTAMP}.bak"
     fi
   done
 
   echo "  -> 💻 Stowing Core CLI Tools..."
-  echo "     (bash, scripts, git, nvim, tmux, starship, fastfetch)"
-  # Using explicit paths prevents the Stow Perl bug!
-  stow --dir="$DOTFILES_DIR" --target="$HOME" bash scripts git nvim tmux starship fastfetch
+  stow --dir="$DOTFILES_DIR" --target="$HOME" bash scripts git nvim tmux starship fastfetch mise
 
-  # Smart detection: Only stow GUI apps if a display server is running
-  if [ -n "${WAYLAND_DISPLAY:-}" ] || [ -n "${DISPLAY:-}" ]; then
+  # Stow GUI only if requested
+  if [ "$INSTALL_GUI" = true ] || [ -n "${WAYLAND_DISPLAY:-}" ] || [ -n "${DISPLAY:-}" ]; then
     echo "  -> 🖥️  GUI Environment detected! Stowing Desktop Apps..."
     stow --dir="$DOTFILES_DIR" --target="$HOME" code kitty fonts sway yazi zathura qutebrowser
 
@@ -64,18 +140,23 @@ if command -v stow >/dev/null 2>&1; then
       chmod +x scripts/scripts/install_themes.sh
       ./scripts/scripts/install_themes.sh
     fi
-  else
-    echo "  -> 🖥️  No GUI detected (Headless/WSL/Termux). Skipping desktop apps."
   fi
-
-  echo "  -> ⚠️  Note: System-level configs (etc-*) skipped in automated run."
-  echo "     Run 'sudo stow --target=/etc etc-copy-paste-hang-sol' manually if required."
-
-else
-  echo "🪟 GNU Stow not found (likely Windows Git Bash)."
-  echo "  -> Falling back to link script for core configs..."
-  ./link
 fi
+
+# ==========================================
+# 🛠️ 5. UNIVERSAL TOOL INSTALLER (Mise First)
+# ==========================================
+echo ""
+echo "========================================"
+echo "🛠️  Running Universal Tool Installer..."
+echo "========================================"
+
+# Pass the flags down to the install script
+INSTALL_ARGS=("--env=$ENV_TYPE")
+if [ "$INSTALL_GUI" = true ]; then INSTALL_ARGS+=("--gui"); fi
+if [ "$AUTO_MODE" = true ]; then INSTALL_ARGS+=("--auto"); fi
+
+./install_tools "${INSTALL_ARGS[@]}"
 
 echo "========================================"
 echo "✨ Bootstrap Complete! Restart your terminal to see the magic."

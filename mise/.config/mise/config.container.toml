@@ -1,0 +1,6 @@
+# Heavy DevOps tools only needed when you are inside your DevPod lab
+[tools]
+terraform = "latest"
+kubectl = "latest"
+helm = "latest"
+awscli = "latest"

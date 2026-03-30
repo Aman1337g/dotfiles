@@ -1,0 +1,4 @@
+# Only installed on Windows
+[tools]
+# Maybe you need a specific version of a Go binary or a Windows-friendly rust tool
+zig = "0.15.0"

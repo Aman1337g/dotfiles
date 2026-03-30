@@ -1,108 +1,96 @@
 #!/usr/bin/env bash
-# install_tools - Universal Environment Bootstrapper
+# install_tools - Universal Environment Bootstrapper (Mise-First Architecture)
 
 echo "========================================"
-echo "🚀 Starting Universal Tool Setup..."
+echo "🚀 Starting System Dependencies & Mise Engine..."
 echo "========================================"
 
-# ---------------------------------------------------------
-# 📝 THE MASTER PACKAGE LISTS
-# Add new standard tools here! The script handles the rest.
-# ---------------------------------------------------------
+# --- Argument Parsing ---
+ENV_TYPE=""
+INSTALL_GUI=false
 
-BREW_PACKAGES=(
-  eza bat fzf zoxide starship neovim stow
-)
-
-APT_PACKAGES=(
-  eza bat fzf neovim curl unzip stow git-delta zathura fastfetch
-)
-
-APK_PACKAGES=(
-  eza bat fzf zoxide starship neovim curl stow
-)
-
-WINGET_PACKAGES=(
-  eza-community.eza
-  sharkdp.bat
-  junegunn.fzf
-  ajeetdsouza.zoxide
-  dandavison.delta
-)
-
-TERMUX_PACKAGES=(
-  git curl wget jq tmux neovim fzf eza bat zoxide starship openssh stow
-)
+while [[ "$#" -gt 0 ]]; do
+  case $1 in
+  --env=*) ENV_TYPE="${1#*=}" ;;
+  --gui) INSTALL_GUI=true ;;
+  esac
+  shift
+done
 
 # ---------------------------------------------------------
-# 📌 TOOL VERSIONS (Update these to upgrade your environment)
+# 📝 SYSTEM BASE PACKAGES (LIFELINES ONLY)
+# All user tools (Neovim, Eza, Starship, etc.) are managed
+# by ~/.config/mise/config.toml at the end of the script.
 # ---------------------------------------------------------
-NVIM_VERSION="v0.11.6"
-ZIG_VERSION="0.13.0"
+BREW_BASE=(git curl unzip stow)
+APT_BASE=(git curl unzip stow build-essential ca-certificates jq)
+APK_BASE=(git curl unzip stow build-base jq)
+TERMUX_BASE=(git curl wget jq tmux openssh stow)
+WINDOWS_BASE=(dandavison.delta) # Winget packages if needed before mise
 
-# ---------------------------------------------------------
-# ⚙️ THE INSTALLATION ENGINE
-# (No need to edit below this line for standard packages)
-# ---------------------------------------------------------
+# GUI Packages (Installed only if --gui is passed)
+APT_GUI=(kitty zathura qutebrowser)
 
 _has() { command -v "$1" >/dev/null 2>&1; }
 
+# ==========================================
+# ⚙️ 1. OS-LEVEL PREREQUISITES
+# ==========================================
+
+# --- Pull corporate certs before downloading anything else ---
+if command -v powershell.exe >/dev/null 2>&1; then
+  # Point directly to the source of truth in the dotfiles repo just in case stow hasn't run
+  CERT_SCRIPT="$HOME/.dotfiles/scripts/scripts/sync_certs"
+  if [ -f "$CERT_SCRIPT" ]; then
+    echo "🔄 Running Zscaler Certificate Sync..."
+    bash "$CERT_SCRIPT"
+  fi
+fi
+
 # --- 0. Android (Termux) ---
-if [ -n "$TERMUX_VERSION" ]; then
-  echo "📱 Termux detected. Using pkg..."
+if [ "$ENV_TYPE" = "termux" ] || [ -n "$TERMUX_VERSION" ]; then
+  echo "📱 Termux detected. Installing system base..."
   pkg update -y
-  pkg install -y "${TERMUX_PACKAGES[@]}"
+  pkg install -y "${TERMUX_BASE[@]}"
 
-# --- 1. macOS (Homebrew) ---
-elif _has brew; then
-  echo "🍏 macOS detected. Using Homebrew..."
-  brew install "${BREW_PACKAGES[@]}"
-
-# --- 2. Debian / Ubuntu (apt) ---
-elif _has apt; then
-  echo "🐧 Debian/Ubuntu detected. Using apt..."
-
-  # Inject eza repository for Ubuntu
+  # Termux fallback: If mise struggles with ARM Android, install core natively
   if ! _has eza; then
-    echo "📦 Adding eza repository..."
-    sudo mkdir -p /etc/apt/keyrings
-    # Using -k on wget/curl to bypass corporate SSL inspection
-    wget -qO- --no-check-certificate https://raw.githubusercontent.com/eza-community/eza/main/deb.asc | sudo gpg --dearmor -o /etc/apt/keyrings/gierens.gpg
-    echo "deb [signed-by=/etc/apt/keyrings/gierens.gpg] https://deb.gierens.de stable main" | sudo tee /etc/apt/sources.list.d/gierens.list
-    sudo chmod 644 /etc/apt/keyrings/gierens.gpg /etc/apt/sources.list.d/gierens.list
+    pkg install -y eza bat fzf zoxide starship neovim
   fi
 
-  sudo apt update
-  sudo apt install -y "${APT_PACKAGES[@]}"
+# --- 1. macOS (Homebrew) ---
+elif _has brew || [ "$ENV_TYPE" = "mac" ]; then
+  echo "🍏 macOS detected. Installing system base via Homebrew..."
+  brew install "${BREW_BASE[@]}"
 
-  # Ubuntu calls bat 'batcat', let's symlink it for standard usage
+# --- 2. Debian / Ubuntu / WSL / Container ---
+elif _has apt || [[ "$ENV_TYPE" =~ (linux|wsl|container) ]]; then
+  echo "🐧 Debian-based system detected. Installing lifelines via apt..."
+  sudo apt-get update -y
+  sudo apt-get install -y "${APT_BASE[@]}"
+
+  # Ubuntu calls bat 'batcat', fix for system scripts that expect 'bat'
   mkdir -p ~/.local/bin
   [ -f /usr/bin/batcat ] && ln -sf /usr/bin/batcat ~/.local/bin/bat
 
-  # --- 🐳 Docker Native Engine (Telemetry-Free) ---
-  if ! _has docker; then
-    echo "🐳 Installing native Docker Engine (Bypassing WSL GUI Check)..."
+  # --- Native GUI Applications ---
+  if [ "$INSTALL_GUI" = true ]; then
+    echo "🖥️  Installing Native GUI Applications..."
+    sudo apt-get install -y "${APT_GUI[@]}"
+  fi
+
+  # --- 🐳 Docker Native Engine (Skip in Containers/WSL) ---
+  if [ "$ENV_TYPE" != "container" ] && [ "$ENV_TYPE" != "wsl" ] && ! _has docker; then
+    echo "🐳 Installing native Docker Engine..."
     curl -k -fsSL https://get.docker.com -o get-docker.sh
-
-    # 🚨 Hack the script to permanently remove the 20-second sleep penalty
+    # 🚨 Hack: permanently remove the 20-second sleep penalty
     sed -i 's/sleep 20/sleep 0/' get-docker.sh
-
-    sudo sh get-docker.sh
-    rm get-docker.sh
-
+    sudo sh get-docker.sh && rm get-docker.sh
     sudo usermod -aG docker "$USER"
     echo "⚠️ Docker installed. (Log out and back in for group permissions to apply)."
   fi
 
-  # --- 🧰 Mise (Polyglot Tool Manager) ---
-  if ! _has mise; then
-    echo "insecure" >~/.curlrc
-    echo "🧰 Installing Mise..."
-    curl -k -sS https://mise.run | sh
-    rm ~/.curlrc
-  fi
-
-  # --- 🚀 DevPod (Container Workspaces) ---
+  # --- 🚀 DevPod CLI ---
   if ! _has devpod; then
     echo "🚀 Installing DevPod CLI..."
     curl -k -L -o devpod "https://github.com/loft-sh/devpod/releases/latest/download/devpod-linux-amd64"
@@ -110,89 +98,80 @@ elif _has apt; then
     rm devpod
   fi
 
-  echo "📦 Installing modern Rust tools via official scripts..."
-
-  # 1. Create a temporary config to force ALL curl commands to bypass SSL
-  echo "insecure" >~/.curlrc
-
-  # 2. Run the official scripts (they will now automatically use the insecure flag!)
-  curl -sS https://starship.rs/install.sh | sh -s -- -y
-  curl -sSfL https://raw.githubusercontent.com/ajeetdsouza/zoxide/main/install.sh | sh
-
-  # 3. Clean up the config to ensure your machine stays secure for daily use
-  rm ~/.curlrc
-
-# --- 3. Alpine Linux (Docker/Containers) ---
+# --- 3. Alpine Linux ---
 elif _has apk; then
   echo "🏔️ Alpine detected. Using apk..."
-  sudo apk add "${APK_PACKAGES[@]}"
+  sudo apk add "${APK_BASE[@]}"
 
-# --- 4. Windows Git Bash (via winget and portable binaries) ---
-elif [[ "$OSTYPE" == "msys" || "$OSTYPE" == "cygwin" ]]; then
+# --- 4. Windows Git Bash ---
+elif [[ "$OSTYPE" == "msys" || "$OSTYPE" == "cygwin" ]] || [ "$ENV_TYPE" = "windows" ]; then
   echo "🪟 Windows Git Bash detected. Bypassing UAC..."
   mkdir -p ~/.local/bin
 
-  # 1. Install standard CLI tools via Winget (User Scope)
-  for pkg in "${WINGET_PACKAGES[@]}"; do
-    winget install --id="$pkg" --scope user --accept-package-agreements --accept-source-agreements || true
-  done
-
-  # 2. Portable Starship (Bypasses Admin MSI)
-  if ! _has starship; then
-    echo "🚀 Downloading portable Starship..."
-    curl -k -sLo ~/.local/bin/starship.zip https://github.com/starship/starship/releases/latest/download/starship-x86_64-pc-windows-msvc.zip
-    unzip -q -o ~/.local/bin/starship.zip -d ~/.local/bin/
-    rm ~/.local/bin/starship.zip
+  if _has winget; then
+    for pkg in "${WINDOWS_BASE[@]}"; do
+      winget install --id="$pkg" --scope user --accept-package-agreements --accept-source-agreements || true
+    done
   fi
 
-  # 3. Portable Neovim (Bypasses Admin MSI)
-  if ! _has nvim; then
-    echo "📝 Downloading portable Neovim..."
-    curl -k -sLo ~/.local/nvim.zip "https://github.com/neovim/neovim/releases/download/${NVIM_VERSION}/nvim-win64.zip"
-    unzip -q -o ~/.local/nvim.zip -d ~/.local/
-    rm ~/.local/nvim.zip
-
-    # Safely create a Bash wrapper so the binary isn't orphaned from its DLLs
-    echo '#!/usr/bin/env bash' >~/.local/bin/nvim
-    echo 'exec "$HOME/.local/nvim-win64/bin/nvim.exe" "$@"' >>~/.local/bin/nvim
-    chmod +x ~/.local/bin/nvim
-  fi
-
-  # 4. Portable Zig (C Compiler for Neovim Treesitter)
-  if ! _has zig; then
-    echo "⚡ Downloading portable Zig compiler..."
-    curl -k -sLo ~/.local/zig.zip "https://ziglang.org/download/${ZIG_VERSION}/zig-windows-x86_64-${ZIG_VERSION}.zip"
-    unzip -q -o ~/.local/zig.zip -d ~/.local/
-    rm ~/.local/zig.zip
-
-    # Safely create a Bash wrapper to keep the PATH clean
-    echo '#!/usr/bin/env bash' >~/.local/bin/zig
-    echo "exec \"\$HOME/.local/zig-windows-x86_64-${ZIG_VERSION}/zig.exe\" \"\$@\"" >>~/.local/bin/zig
-    chmod +x ~/.local/bin/zig
-  fi
-
-  # # Portable DevPod CLI (Windows)
-  # if ! _has devpod; then
-  #   echo "🚀 Downloading portable DevPod CLI..."
-  #   curl -k -sLo ~/.local/bin/devpod.exe "https://github.com/loft-sh/devpod/releases/latest/download/devpod-windows-amd64.exe"
-  # fi
-  #
-  # # Portable Mise (Windows)
-  # if ! _has mise; then
-  #   echo "🧰 Downloading portable Mise..."
-  #   curl -k -sLo ~/.local/bin/mise.exe "https://github.com/jdx/mise/releases/latest/download/mise-v2024.1.1-windows-x64.exe"
-  # fi
-
-  # Ensure everything placed in the local bin is executable
+  # Ensure local bin is ready for portable binaries
   if [ -d "$HOME/.local/bin" ]; then
-    chmod +x "$HOME/.local/bin"/*
+    chmod +x "$HOME/.local/bin"/* 2>/dev/null || true
+  fi
+fi
+
+# ==========================================
+# 🧰 2. THE MISE POLYGLOT ENGINE
+# ==========================================
+echo ""
+echo "========================================"
+echo "🧰 Activating Mise-First Environment"
+echo "========================================"
+
+# Bypass corporate SSL inspection universally for this session
+export MISE_INSECURE_HTTPS=1
+echo "insecure" >~/.curlrc
+
+# --- Install Mise CLI ---
+if ! _has mise; then
+  echo "⬇️ Downloading Mise..."
+
+  if [[ "$OSTYPE" == "msys" || "$OSTYPE" == "cygwin" ]] || [ "$ENV_TYPE" = "windows" ]; then
+    # Windows Portable Mise
+    mkdir -p ~/.local/bin
+    curl -k -sLo ~/.local/bin/mise.exe "https://github.com/jdx/mise/releases/latest/download/mise-v2024.1.1-windows-x64.exe"
+    chmod +x ~/.local/bin/mise.exe
+  else
+    # Unix/Linux/macOS Mise
+    curl -k -sS https://mise.run | sh
+  fi
+fi
+
+# Clean up curlrc so the system stays secure for daily use
+rm -f ~/.curlrc
+
+# --- Inject Mise into the current PATH so we can run it immediately ---
+export PATH="$HOME/.local/bin:$HOME/.local/share/mise/bin:$HOME/.local/share/mise/shims:$PATH"
+
+# --- Execute Provisioning ---
+if _has mise; then
+  echo "🚀 Reading ~/.config/mise/config.toml and provisioning tools..."
+
+  # 👇 THIS IS THE MAGIC LINE 👇
+  # Treat WSL identical to Linux for CLI tools
+  if [ "$ENV_TYPE" = "wsl" ]; then
+    export MISE_ENV="linux"
+  else
+    export MISE_ENV="$ENV_TYPE"
   fi
 
-  echo "✅ Windows portable setup complete."
+  # Run the installation
+  mise install -y
 
+  # Ensure shims (executables) are generated and linked
+  mise reshim
 else
-  echo "❌ Unsupported package manager. Please install tools manually."
-  exit 1
+  echo "❌ Failed to install or locate Mise. Core CLI tools may be missing."
 fi
 
 echo "========================================"
