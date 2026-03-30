@@ -62,6 +62,9 @@ link_file "$DOTFILES_DIR/fastfetch/.config/fastfetch" "$HOME/.config/fastfetch"
 # 7. Scripts
 link_file "$DOTFILES_DIR/scripts/scripts" "$HOME/scripts"
 
+# 8. Mise
+link_file "$DOTFILES_DIR/mise/.config/mise" "$HOME/.config/mise"
+
 # 8. Windows Terminal (OS-Aware Copy, NOT Symlink)
 if [[ "$OSTYPE" == "msys" || "$OSTYPE" == "cygwin" ]]; then
   echo "🪟 Windows detected. Copying Windows Terminal settings..."
