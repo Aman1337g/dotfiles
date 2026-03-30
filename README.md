@@ -1,56 +1,67 @@
 # 💻 Aman's Dotfiles
 
-A production-grade, cross-platform collection of dotfiles and environment configurations. Built for speed, portability, and robust fallback handling across Debian/Ubuntu, macOS, Alpine, and Windows (WSL/Git Bash).
+A production-grade, cross-platform collection of dotfiles and environment configurations. Built for speed, portability, and robust fallback handling across Debian/Ubuntu, macOS, Alpine, Windows (WSL/Git Bash), Android (Termux), and Ephemeral Containers (DevPod/Docker).
 
 ## ✨ Features
-* **Zero-Touch Bootstrapper:** A single one-liner orchestrates repository cloning, tool installation, and symlinking based on your exact environment.
+* **Mise-First Architecture:** Relegates native package managers (`apt`, `brew`) to basic lifelines, relying entirely on `mise` to dynamically provision exact versions of CLI tools (Neovim, Terraform, Eza, Starship) across every OS via environment-specific `config.toml` files.
+* **Corporate Proxy Immune:** Features a custom Windows-to-Linux Interop script (`sync_certs`) that automatically extracts Zscaler Root CAs from the Windows registry and injects them into the WSL trust store to prevent SSL handshake failures.
+* **Zero-Touch & Interactive Bootstrapper:** A single `setup` script orchestrates repository cloning, linking, and tool installation. Run it interactively via a CLI menu, or fully unattended using flags (`--auto`, `--env=container`).
 * **The Ultimate Editor:** A fully customized, transparent [LazyVim](https://github.com/LazyVim/LazyVim) setup featuring the Nordic theme, pre-configured for DevOps workflows (Terraform, Python, YAML, JSON).
-* **Smart Environment Detection:** Automatically detects if you are running a GUI (Wayland/X11) or a headless container, stowing desktop apps (Kitty, Sway) only when necessary.
-* **Graceful Degradation:** Safely falls back to a custom `link` script on Windows Git Bash where GNU `stow` isn't natively available.
-* **UAC Bypass:** Windows installations via `winget` are strictly scoped to the user profile, bypassing annoying admin prompts.
+* **Smart Environment Detection:** Uses a 3-tier detection system (Flags -> Interactive Prompt -> Wayland/X11 Heartbeat) to automatically decide whether to stow heavy GUI desktop apps (Kitty, Sway, Qutebrowser) or keep the environment headless.
+* **Idempotent Stow Runway:** Safely clears the runway for GNU Stow by detecting existing physical configurations and moving them to timestamped `.bak` files to prevent catastrophic overwrites or link failures.
 
 ---
 
 ## 🚀 Installation & Setup
 
-### Option 1: The One-Liner (Recommended)
-If you are on a fresh machine, VM, or DevContainer, just run this to automatically clone the repo, install all tools, and link your configs in one shot:
+### Option 1: The Zero-Touch Bootstrapper (Recommended)
+If you are on a fresh machine, VM, or DevContainer, you don't even need to clone the repository manually. Just run this single command. 
+
+It will securely download the setup engine, automatically clone the repo to `~/.dotfiles`, install all `mise` toolchains, and link your configurations in one shot:
 
 ```bash
 curl -sL https://raw.githubusercontent.com/Aman1337g/dotfiles/main/setup | bash
-````
+```
+
+**Automated / CI Mode:**
+
+To bypass the interactive GUI prompts (perfect for DevPod `postCreateCommand` hooks), pass the automation flags directly to the piped script:
+
+```bash
+curl -sL https://raw.githubusercontent.com/Aman1337g/dotfiles/main/setup | bash -s -- --auto --env=container
+```
 
 ### Option 2: Manual Installation
 
-If you prefer to review the scripts before running them, you can bootstrap the system manually.
+If you prefer to review the scripts and run the pipeline manually, follow this exact order. **(Note: You must link your dotfiles *before* installing tools so Mise can read your `config.toml`).**
 
 **1. Clone the Repository**
 
 ```bash
-git clone https://github.com/Aman1337g/dotfiles.git ~/.dotfiles
+git clone [https://github.com/Aman1337g/dotfiles.git](https://github.com/Aman1337g/dotfiles.git) ~/.dotfiles
 cd ~/.dotfiles
 ```
 
-**2. Install Core Tools & Dependencies**
-Runs the universal installer (detects `apt`, `apk`, `brew`, or `winget`) to grab dependencies like `eza`, `bat`, `fzf`, `zoxide`, `starship`, and `neovim`.
-
-```bash
-./install_tools
-```
-
-**3. Link the Configurations**
+**2. Link the Configurations**
 
 ```bash
 # Standard Linux / macOS / WSL (Requires GNU Stow)
-stow bash scripts git nvim tmux starship fastfetch
+stow bash scripts git nvim tmux starship fastfetch mise
 
 # Alternative: Windows Git Bash Fallback (No Stow Required)
 ./link
 ```
 
+**3. Install Core Tools & Dependencies**
+Runs the universal installer to grab system lifelines (`curl`, `git`), sync corporate certificates (if on WSL), and trigger `mise` to build the polyglot toolchain.
+
+```bash
+./install_tools
+```
+
 > **Note on Windows Terminal/WSL:**
-> Your `wsl/settings.json` should be placed in:
-> `/mnt/c/Users/AMAN.GUPTA7/AppData/Local/Packages/Microsoft.WindowsTerminal_8wekyb3d8bbwe/LocalState`
+> Your `wsl/settings.json` is automatically copied via the `link` script to:
+> `AppData/Local/Packages/Microsoft.WindowsTerminal_8wekyb3d8bbwe/LocalState/settings.json`
 
 -----
 
@@ -63,8 +74,7 @@ The `--adopt` option in `GNU Stow` handles existing files in the target director
 
 ### How it works
 
-**Scenario**  
-You already have `~/.bashrc`, and you want Stow to manage your Bash config. Normally, Stow would refuse to overwrite it.
+**Scenario** You already have `~/.bashrc`, and you want Stow to manage your Bash config. Normally, Stow would refuse to overwrite it.
 
 **Using `--adopt`**
 
@@ -98,24 +108,24 @@ You’ll need to manually merge or restore your preferred configuration afterwar
 
 1. **Back up your current config**
 
-   ```bash
-   cp ~/.bashrc ~/.bashrc.bak
-   ```
+```bash
+cp ~/.bashrc ~/.bashrc.bak
+```
 
 2. **Adopt existing file**
 
-   ```bash
-   cd ~/.dotfiles
-   stow --adopt bash
-   ```
+```bash
+cd ~/.dotfiles
+stow --adopt bash
+```
 
 3. **Restore or merge your desired config**
 
-   ```bash
-   cp ~/.bashrc.bak ~/.dotfiles/bash/.bashrc
-   rm ~/.bashrc.bak
-   stow -R bash
-   ```
+```bash
+cp ~/.bashrc.bak ~/.dotfiles/bash/.bashrc
+rm ~/.bashrc.bak
+stow -R bash
+```
 
 For more complex setups, consider using a diff/merge tool instead of overwriting.
 
