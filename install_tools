@@ -38,8 +38,8 @@ _has() { command -v "$1" >/dev/null 2>&1; }
 # ==========================================
 
 # --- Pull corporate certs before downloading anything else ---
-if command -v powershell.exe >/dev/null 2>&1; then
-  # Point directly to the source of truth in the dotfiles repo just in case stow hasn't run
+# Only necessary on WSL to bridge the Windows Trust Store into the Linux subsystem
+if [ "$ENV_TYPE" = "wsl" ]; then
   CERT_SCRIPT="$HOME/.dotfiles/scripts/scripts/sync_certs"
   if [ -f "$CERT_SCRIPT" ]; then
     echo "🔄 Running Zscaler Certificate Sync..."
