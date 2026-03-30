@@ -26,7 +26,7 @@ BREW_BASE=(git curl unzip stow)
 APT_BASE=(git curl unzip stow build-essential ca-certificates jq)
 APK_BASE=(git curl unzip stow build-base jq)
 TERMUX_BASE=(git curl wget jq tmux openssh stow)
-WINDOWS_BASE=(dandavison.delta) # Winget packages if needed before mise
+WINDOWS_BASE=(dandavison.delta Neovim.Neovim junegunn.fzf eza-community.eza zig.zig)
 
 # GUI Packages (Installed only if --gui is passed)
 APT_GUI=(kitty zathura qutebrowser)
@@ -169,6 +169,26 @@ export PATH="$HOME/.local/bin:$HOME/.local/share/mise/bin:$HOME/.local/share/mis
 # --- Execute Provisioning ---
 if _has mise || [ -f "$HOME/.local/bin/mise.exe" ] || [ -f "$HOME/.local/bin/mise" ]; then
   echo "🚀 Reading ~/.config/mise/config.toml and provisioning tools..."
+
+  # 1. Automatically trust our native Linux/Mac/Windows dotfiles configurations
+  for conf in "$HOME/.dotfiles/mise/.config/mise"/config*.toml "$HOME/.config/mise"/config*.toml; do
+    if [ -f "$conf" ]; then
+      mise trust "$conf" >/dev/null 2>&1 || true
+    fi
+  done
+
+  # 2. If on WSL, dynamically find the Windows C:\ drive and trust it too
+  if [ "$ENV_TYPE" = "wsl" ] && command -v wslpath >/dev/null 2>&1; then
+    WIN_USERPROFILE=$(cmd.exe /c "echo %USERPROFILE%" 2>/dev/null | tr -d '\r')
+    if [ -n "$WIN_USERPROFILE" ]; then
+      WIN_HOME=$(wslpath "$WIN_USERPROFILE")
+      for conf in "$WIN_HOME/.config/mise"/config*.toml "$WIN_HOME/.dotfiles/mise/.config/mise"/config*.toml; do
+        if [ -f "$conf" ]; then
+          mise trust "$conf" >/dev/null 2>&1 || true
+        fi
+      done
+    fi
+  fi
 
   # 👇 THIS IS THE MAGIC LINE 👇
   # Treat WSL identical to Linux for CLI tools
