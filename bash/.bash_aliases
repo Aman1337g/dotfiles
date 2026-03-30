@@ -120,10 +120,9 @@ _get_ado_ticket() {
 }
 
 dc() {
-  set -f # Temporarily disable globbing (prevents * from expanding into filenames)
-  local ticket type msg commit_format
+  set -f
+  local ticket type msg body commit_format
 
-  # Fetch ticket (will be empty if not found, but won't crash)
   ticket=$(_get_ado_ticket) || {
     set +f
     return 1
@@ -136,17 +135,32 @@ dc() {
     type="fix"
   fi
 
-  msg="${*:-dummy commit}"
+  # If exactly 2 arguments remain, treat them as "Subject" and "Body"
+  if [ $# -eq 2 ]; then
+    msg="$1"
+    # Safely translate literal '\n' and '\t' into real Bash newlines and tabs
+    body="${2//\\n/$'\n'}"
+    body="${body//\\t/$'\t'}"
+  else
+    # Legacy behavior: combine all remaining words into the subject
+    msg="${*:-dummy commit}"
+    body=""
+  fi
 
-  # Dynamically format the commit message
   if [ -n "$ticket" ]; then
     commit_format="${type}(${ticket}): ${msg}"
   else
     commit_format="${type}: ${msg}"
   fi
 
-  git commit -m "$commit_format"
-  set +f # Re-enable globbing
+  # Git natively separates multiple -m flags with a blank line
+  if [ -n "$body" ]; then
+    git commit -m "$commit_format" -m "$body"
+  else
+    git commit -m "$commit_format"
+  fi
+
+  set +f
 }
 
 pc() {
