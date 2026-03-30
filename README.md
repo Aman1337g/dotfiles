@@ -190,3 +190,4 @@ Running `stow bash` (without `-R`) will still create symlinks for any **new file
 In most cases, plain `stow` is sufficient.
 
 </details>
+
