@@ -11,15 +11,8 @@ INSTALL_GUI=false
 while [[ "$#" -gt 0 ]]; do
   case $1 in
   --auto) AUTO_MODE=true ;;
-  --env=*) ENV_TYPE="${1#*=}" ;;
   --gui) INSTALL_GUI=true ;;
-  --help)
-    echo "Usage: ./setup [OPTIONS]"
-    echo "  --auto            Run without interactive prompts"
-    echo "  --env=<type>      Force environment (wsl, linux, mac, termux, container, windows)"
-    echo "  --gui             Install Desktop/GUI applications"
-    exit 0
-    ;;
+  --env=*) ENV_TYPE="${1#*=}" ;;
   *)
     echo "Unknown parameter passed: $1"
     exit 1
@@ -28,18 +21,29 @@ while [[ "$#" -gt 0 ]]; do
   shift
 done
 
-echo "========================================"
-echo "🚀 Starting System Bootstrap..."
-echo "========================================"
-
-# --- 📱 Termux Pre-Flight Check ---
+# ==========================================
+# 🧠 SMART AUTO-DETECTION & TTY CHECK
+# ==========================================
+DEFAULT_ENV="linux"
 if [ -n "$TERMUX_VERSION" ]; then
-  ENV_TYPE="termux"
-  if ! command -v git >/dev/null 2>&1; then
-    echo "📱 Termux detected without Git. Installing prerequisite..."
-    pkg update -y && pkg install git -y
-  fi
+  DEFAULT_ENV="termux"
+elif [ -f /.dockerenv ] || [ -f /run/.containerenv ]; then
+  DEFAULT_ENV="container"
+elif grep -qi microsoft /proc/version 2>/dev/null; then
+  DEFAULT_ENV="wsl"
+elif [[ "$OSTYPE" == "darwin"* ]]; then
+  DEFAULT_ENV="mac"
+elif [[ "$OSTYPE" == "msys" || "$OSTYPE" == "cygwin" ]]; then
+  DEFAULT_ENV="windows"
 fi
+
+# If stdin is not a terminal (e.g., curl | bash), force AUTO_MODE
+if [ ! -t 0 ]; then
+  echo "⚠️ Piped execution detected. Forcing Auto Mode."
+  AUTO_MODE=true
+fi
+
+export ENV_TYPE
 
 # ==========================================
 # 🗣️ 2. INTERACTIVE MENU (If not in --auto mode)
@@ -55,28 +59,48 @@ if [ "$AUTO_MODE" = false ]; then
     echo "  3) macOS"
     echo "  4) DevPod / Container (Ephemeral)"
     echo "  5) Windows Git Bash"
-    read -p "Enter choice [1-5] (Default: 1/Linux): " env_choice
+    # Force read from tty just in case
+    read -p "Enter choice [1-5] (Default: $DEFAULT_ENV): " env_choice </dev/tty
     case $env_choice in
     1) ENV_TYPE="linux" ;;
     2) ENV_TYPE="wsl" ;;
     3) ENV_TYPE="mac" ;;
     4) ENV_TYPE="container" ;;
     5) ENV_TYPE="windows" ;;
-    *) ENV_TYPE="linux" ;; # Default
+    *) ENV_TYPE="$DEFAULT_ENV" ;;
     esac
   fi
 
-  if [ "$ENV_TYPE" = "linux" ] || [ "$ENV_TYPE" = "mac" ]; then
-    read -p "🖥️  Install GUI Desktop Apps (Kitty, Zathura, etc.)? (y/n): " gui_choice
+  if [[ "$ENV_TYPE" =~ (linux|mac) ]]; then
+    read -p "🖥️  Install GUI Desktop Apps (Kitty, Zathura, etc.)? (y/n): " gui_choice </dev/tty
     if [[ "$gui_choice" =~ ^[Yy]$ ]]; then
       INSTALL_GUI=true
     fi
+  fi
+else
+  # In AUTO_MODE, if ENV_TYPE wasn't explicitly passed via flag, use the auto-detected one
+  if [ -z "$ENV_TYPE" ]; then
+    ENV_TYPE="$DEFAULT_ENV"
+    echo "🤖 Auto-detected environment: $ENV_TYPE"
   fi
 fi
 
 export ENV_TYPE
 export INSTALL_GUI
 export AUTO_MODE
+
+echo "========================================"
+echo "🚀 Starting System Bootstrap..."
+echo "========================================"
+
+# --- 📱 Termux Pre-Flight Check ---
+if [ -n "$TERMUX_VERSION" ]; then
+  ENV_TYPE="termux"
+  if ! command -v git >/dev/null 2>&1; then
+    echo "📱 Termux detected without Git. Installing prerequisite..."
+    pkg update -y && pkg install git -y
+  fi
+fi
 
 DOTFILES_DIR="$HOME/.dotfiles"
 
@@ -136,9 +160,9 @@ else
     echo "  -> 🖥️  GUI Environment detected! Stowing Desktop Apps..."
     stow --dir="$DOTFILES_DIR" --target="$HOME" code kitty fonts sway yazi zathura qutebrowser
 
-    if [ -f "scripts/scripts/install_themes.sh" ]; then
-      chmod +x scripts/scripts/install_themes.sh
-      ./scripts/scripts/install_themes.sh
+    if [ -f "scripts/scripts/install_themes" ]; then
+      chmod +x scripts/scripts/install_themes
+      ./scripts/scripts/install_themes
     fi
   fi
 fi

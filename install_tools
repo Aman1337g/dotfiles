@@ -135,16 +135,8 @@ echo "insecure" >~/.curlrc
 # --- Install Mise CLI ---
 if ! _has mise; then
   echo "⬇️ Downloading Mise..."
-
-  if [[ "$OSTYPE" == "msys" || "$OSTYPE" == "cygwin" ]] || [ "$ENV_TYPE" = "windows" ]; then
-    # Windows Portable Mise
-    mkdir -p ~/.local/bin
-    curl -k -sLo ~/.local/bin/mise.exe "https://github.com/jdx/mise/releases/latest/download/mise-v2024.1.1-windows-x64.exe"
-    chmod +x ~/.local/bin/mise.exe
-  else
-    # Unix/Linux/macOS Mise
-    curl -k -sS https://mise.run | sh
-  fi
+  # The official install script handles macOS, Linux, AND Windows Git Bash flawlessly!
+  curl -k -sS https://mise.run | sh
 fi
 
 # Clean up curlrc so the system stays secure for daily use
