@@ -5,6 +5,20 @@
 [user]
     name = Aman Kumar Gupta
     email = 97891757+Aman1337g@users.noreply.github.com
+    signingkey = ~/.ssh/id_ed25519
+
+[commit]
+    # Automatically sign all commits
+    # echo "<email> $(cat ~/.ssh/<KEY>.pub)" >> ~/.ssh/allowed_signers
+    gpgsign = true
+
+[gpg]
+    # Tell Git to use SSH instead of GPG
+    format = ssh
+
+[gpg "ssh"]
+    # Point Git to trusted keys file
+    allowedSignersFile = ~/.ssh/allowed_signers
 
 [credential]
     # helper = store
@@ -12,6 +26,10 @@
     # sudo ln -s "/mnt/c/Program Files/Git/mingw64/bin/git-credential-manager.exe" /usr/local/bin/git-credential-manager.exe
     # echo -e "protocol=https\nhost=github.com" | git credential fill
     helper = "!$HOME/scripts/git-credential-universal"
+
+[credential "https://github.com"]
+    # Your username discovered from 'ssh -T git@github.com'
+    username = Aman1337g
 
 [init]
     defaultBranch = main
@@ -73,6 +91,10 @@
 ; [user]
 ;     name = Aman Kumar Gupta
 ;     email = <org-email> 
+;
+; [commit]
+      # Disables the global auto-signing for work repos
+;     gpgsign = false
 ;
 ; # Automatically rewrite standard URLs to use the 'spgi' SSH alias
 ; [url "git@spgi:spglobal"]
