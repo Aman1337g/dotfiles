@@ -9,7 +9,7 @@
 [credential]
     # helper = store
     # Use GCM for Windows if available, else keep 'store'
-    # helper = /mnt/c/Program\ Files/Git/mingw64/bin/git-credential-manager.exe
+    # sudo ln -s "/mnt/c/Program Files/Git/mingw64/bin/git-credential-manager.exe" /usr/local/bin/git-credential-manager.exe
     # echo -e "protocol=https\nhost=github.com" | git credential fill
     helper = "!$HOME/scripts/git-credential-universal"
 

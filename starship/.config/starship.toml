@@ -1,9 +1,11 @@
 "$schema" = 'https://starship.rs/config-schema.json'
 
+# --- 0. THE GLOBAL LAYOUT ---
+# No manual brackets here! The modules now contain their own containers.
 format = """
 $os$username$env_var\
 $directory\
-${custom.git_pill}\
+$git_branch$git_status\
 $c$rust$golang$nodejs$php$java$kotlin$haskell$python\
 $docker_context\
 $time\
@@ -26,32 +28,32 @@ nord_red = "#BF616A"      # Aurora (Error)
 nord_purple = "#B48EAD"   # Aurora (Time)
 
 # --- 1. THE HOST IDENTITY BLOCK ---
-# OS and Username are now completely independent pills.
-# This prevents "broken edges" on ephemeral environments (like Termux or Containers) 
-# where the username module might dynamically hide itself.
-
 [os]
 disabled = false
 style = "bg:nord_pill_1 fg:nord_fg"
-format = '[](nord_pill_1)[$symbol](bold $style)[ ](nord_pill_1)'
+format = '[](nord_pill_1)[$symbol]($style)[ ](nord_pill_1)'
+
+[os.symbols]
+Debian = " "
+Ubuntu = "󰕈 "
+Windows = "󰍲 "
+Linux = "󰌽 "
 
 [username]
 show_always = true
 style_user = "bg:nord_pill_1 fg:nord_fg"
 style_root = "bg:nord_pill_1 fg:nord_red"
-format = '[](nord_pill_1)[ $user ]($style)[ ](nord_pill_1)'
+format = '([](nord_pill_1)[ $user ]($style)[ ](nord_pill_1))'
 
-# 🚀 The WSL Distro Injector
 [env_var.WSL_DISTRO_NAME]
 variable = "WSL_DISTRO_NAME"
 style = "bg:nord_pill_2 fg:nord_yellow"
-format = '[](nord_pill_2)[ $env_value ](italic $style)[ ](nord_pill_2)'
-
+format = '([](nord_pill_2)[ $env_value ]($style)[ ](nord_pill_2))'
 
 # --- 2. THE DIRECTORY BLOCK ---
 [directory]
 style = "bg:nord_pill_2 fg:nord_fg"
-format = '[](nord_pill_2)[ $path ]($style)[ ](nord_pill_2)'
+format = '([](nord_pill_2)[ $path ]($style)[ ](nord_pill_2))'
 truncation_length = 3
 truncation_symbol = "…/"
 
@@ -63,37 +65,39 @@ truncation_symbol = "…/"
 "Developer" = "󰲋 "
 
 # --- 3. THE GIT BLOCK ---
-# Branch and Status are now independent pills to prevent broken edges on clean repos.
+# Branch and Status are independent. Status only appears if there are changes.
 [git_branch]
 symbol = ""
 style = "bg:nord_pill_3 fg:nord_green"
-format = '[](nord_pill_3)[ $symbol $branch ]($style)[ ](nord_pill_3)'
+# Wrapped in () so it vanishes if not in a git repo
+format = '([](nord_pill_3)[ $symbol $branch ]($style)[ ](nord_pill_3))'
 
 [git_status]
 style = "bg:nord_pill_3 fg:nord_red"
-# Added 'condition' logic implicitly by ensuring format only triggers on content
-format = '([](nord_pill_3)[$all_status$ahead_behind]($style)[ ](nord_pill_3))'
+# Wrapped in () so the pill only exists if there is actual status text
+format = '([](nord_pill_3)[ $all_status$ahead_behind ]($style)[ ](nord_pill_3))'
 
 # --- 4. THE LANGUAGE BLOCKS ---
+# All wrapped in () to prevent "Ghost Pills" during split screens
 [c]
 symbol = " "
 style = "bg:nord_blue fg:nord_bg"
-format = '[](nord_blue)[ $symbol( $version) ]($style)[ ](nord_blue)'
+format = '([](nord_blue)[ $symbol( $version) ]($style)[ ](nord_blue))'
 
 [rust]
 symbol = ""
 style = "bg:nord_blue fg:nord_bg"
-format = '[](nord_blue)[ $symbol( $version) ]($style)[ ](nord_blue)'
+format = '([](nord_blue)[ $symbol( $version) ]($style)[ ](nord_blue))'
 
 [golang]
 symbol = ""
 style = "bg:nord_blue fg:nord_bg"
-format = '[](nord_blue)[ $symbol( $version) ]($style)[ ](nord_blue)'
+format = '([](nord_blue)[ $symbol( $version) ]($style)[ ](nord_blue))'
 
 [nodejs]
 symbol = ""
 style = "bg:nord_blue fg:nord_bg"
-format = '[](nord_blue)[ $symbol( $version) ]($style)[ ](nord_blue)'
+format = '([](nord_blue)[ $symbol( $version) ]($style)[ ](nord_blue))'
 
 [python]
 symbol = ""
@@ -103,25 +107,25 @@ format = '([](nord_blue)[ $symbol( $version) ]($style)[ ](nord_blue))'
 [php]
 symbol = ""
 style = "bg:nord_blue fg:nord_bg"
-format = '[](nord_blue)[ $symbol( $version) ]($style)[ ](nord_blue)'
+format = '([](nord_blue)[ $symbol( $version) ]($style)[ ](nord_blue))'
 
 [java]
 symbol = " "
 style = "bg:nord_blue fg:nord_bg"
-format = '[](nord_blue)[ $symbol( $version) ]($style)[ ](nord_blue)'
+format = '([](nord_blue)[ $symbol( $version) ]($style)[ ](nord_blue))'
 
 # --- 5. DEVOPS & TIME ---
 [docker_context]
 symbol = ""
 style = "bg:nord_cyan fg:nord_bg"
-format = '[](nord_cyan)[ $symbol( $context) ]($style)[ ](nord_cyan)'
+format = '([](nord_cyan)[ $symbol( $context) ]($style)[ ](nord_cyan))'
 
 [time]
 disabled = false
 time_format = "%I:%M %p"
 style = "bg:nord_purple fg:nord_bg"
-# The outer brackets () ensure the whole pill vanishes if it can't fit
-format = '([](nord_purple)[  $time ]($style)[](nord_purple))'
+# Wrapped in () to ensure it disappears cleanly if squeezed
+format = '([](nord_purple)[  $time ]($style)[ ](nord_purple))'
 
 # --- 6. PROMPT CHARACTER ---
 [line_break]
