@@ -1,4 +1,7 @@
-# Only installed on Windows
+# Only applied on Windows Git Bash / MSYS
 [tools]
-# Maybe you need a specific version of a Go binary or a Windows-friendly rust tool
-zig = "0.15.0"
+# Delegate these blocked/compiled tools to Winget
+neovim = "system"
+eza = "system"
+fzf = "system"
+zig = "system"
