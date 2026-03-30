@@ -115,11 +115,10 @@ z() {
 }
 
 # --- Mise Integration (Dynamically manages toolchains) ---
-if command -v mise >/dev/null 2>&1; then
-  # 1. Precise Environment Detection for config.*.toml mapping
+if command -v mise >/dev/null 2>&1 || [ -f "$HOME/.local/bin/mise.exe" ]; then
+  # 1. Precise Environment Detection
   if [ -n "$TERMUX_VERSION" ]; then
     export MISE_ENV="termux"
-    # Docker/Devpod creates a hidden /.dockerenv or /.containerenv file at root of fs
   elif [ -f /.dockerenv ] || [ -f /run/.containerenv ]; then
     export MISE_ENV="container"
   elif grep -qi microsoft /proc/version 2>/dev/null; then
@@ -132,8 +131,15 @@ if command -v mise >/dev/null 2>&1; then
     export MISE_ENV="windows"
   fi
 
-  # 2. Activate
-  eval "$(mise activate bash)"
+  # 2. Activate or Shim Map
+  if [[ "$OSTYPE" == "msys" || "$OSTYPE" == "cygwin" ]]; then
+    # Native Windows mise.exe uses semicolons, which breaks Git Bash.
+    # We bypass 'activate' and manually inject both possible Windows shim locations.
+    export PATH="$HOME/AppData/Local/mise/shims:$HOME/.local/share/mise/shims:$PATH"
+  else
+    # Safe to use standard activation on Unix systems
+    eval "$(mise activate bash)"
+  fi
 fi
 
 # --- Zoxide ---
