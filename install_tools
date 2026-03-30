@@ -133,10 +133,25 @@ export MISE_INSECURE_HTTPS=1
 echo "insecure" >~/.curlrc
 
 # --- Install Mise CLI ---
-if ! _has mise; then
+if ! _has mise && [ ! -f "$HOME/.local/bin/mise.exe" ] && [ ! -f "$HOME/.local/bin/mise" ]; then
   echo "⬇️ Downloading Mise..."
-  # The official install script handles macOS, Linux, AND Windows Git Bash flawlessly!
-  curl -k -sS https://mise.run | sh
+
+  if [ "$ENV_TYPE" = "windows" ]; then
+    echo "🪟 Fetching Windows binary (Zip extraction)..."
+    mkdir -p /tmp/mise_dl && cd /tmp/mise_dl
+    curl -sL "https://github.com/jdx/mise/releases/latest/download/mise-latest-windows-x64.zip" -o mise.zip
+    unzip -q mise.zip
+    mkdir -p "$HOME/.local/bin"
+
+    # Extract the exe safely whether it's in the root of the zip or a /bin/ folder
+    find . -name "mise.exe" -exec mv {} "$HOME/.local/bin/" \;
+
+    cd - >/dev/null
+    rm -rf /tmp/mise_dl
+  else
+    # Native Linux / macOS installer
+    curl -k -sS https://mise.run | sh
+  fi
 fi
 
 # Clean up curlrc so the system stays secure for daily use
@@ -146,7 +161,7 @@ rm -f ~/.curlrc
 export PATH="$HOME/.local/bin:$HOME/.local/share/mise/bin:$HOME/.local/share/mise/shims:$PATH"
 
 # --- Execute Provisioning ---
-if _has mise; then
+if _has mise || [ -f "$HOME/.local/bin/mise.exe" ] || [ -f "$HOME/.local/bin/mise" ]; then
   echo "🚀 Reading ~/.config/mise/config.toml and provisioning tools..."
 
   # 👇 THIS IS THE MAGIC LINE 👇
