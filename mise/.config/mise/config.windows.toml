@@ -1,7 +1,4 @@
 # Only applied on Windows Git Bash / MSYS
-[tools]
-# Delegate these blocked/compiled tools to Winget
-neovim = "system"
-eza = "system"
-fzf = "system"
-zig = "system"
+[settings]
+# Delegate these blocked/compiled tools to Winget by disabling them in Mise
+disable_tools = ["neovim", "eza", "fzf", "zig"]
