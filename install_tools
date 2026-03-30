@@ -139,11 +139,17 @@ if ! _has mise && [ ! -f "$HOME/.local/bin/mise.exe" ] && [ ! -f "$HOME/.local/b
   if [ "$ENV_TYPE" = "windows" ]; then
     echo "🪟 Fetching Windows binary (Zip extraction)..."
     mkdir -p /tmp/mise_dl && cd /tmp/mise_dl
-    curl -sL "https://github.com/jdx/mise/releases/latest/download/mise-latest-windows-x64.zip" -o mise.zip
+
+    # 1. Dynamically fetch the latest version number
+    MISE_VER=$(curl -fsSL https://mise.jdx.dev/VERSION)
+    echo "📦 Latest version detected: v$MISE_VER"
+
+    # 2. Download the exact versioned zip file
+    curl -sL "https://github.com/jdx/mise/releases/download/v${MISE_VER}/mise-v${MISE_VER}-windows-x64.zip" -o mise.zip
+
+    # 3. Extract and install
     unzip -q mise.zip
     mkdir -p "$HOME/.local/bin"
-
-    # Extract the exe safely whether it's in the root of the zip or a /bin/ folder
     find . -name "mise.exe" -exec mv {} "$HOME/.local/bin/" \;
 
     cd - >/dev/null
