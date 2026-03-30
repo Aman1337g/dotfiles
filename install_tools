@@ -150,7 +150,7 @@ if ! _has mise && [ ! -f "$HOME/.local/bin/mise.exe" ] && [ ! -f "$HOME/.local/b
     # 3. Extract and install
     unzip -q mise.zip
     mkdir -p "$HOME/.local/bin"
-    find . -name "mise.exe" -exec mv {} "$HOME/.local/bin/" \;
+    find . -name "mise*.exe" -exec mv {} "$HOME/.local/bin/" \;
 
     cd - >/dev/null
     rm -rf /tmp/mise_dl
