@@ -148,43 +148,16 @@ fi
 [ -f "$HOME/.bash_aliases" ] && . "$HOME/.bash_aliases"
 
 # ==========================================
-# 5. UI Prompt & Directory Navigation
+# ⚡ STANDARD TOOL INITIALIZATION
 # ==========================================
-if [[ "$OSTYPE" == "msys" || "$OSTYPE" == "cygwin" ]]; then
-  # --- WINDOWS GIT BASH (CACHED MODE) ---
-  # Kills the 20-second process forking lag by reading from text files
-  
-  # 1. Starship Cache
-  if command -v starship >/dev/null; then
-    STARSHIP_CACHE="$HOME/.starship_cache.sh"
-    if [ ! -s "$STARSHIP_CACHE" ]; then
-      starship init bash > "$STARSHIP_CACHE"
-    fi
-    source "$STARSHIP_CACHE"
-  fi
 
-  # 2. Zoxide Cache (Must be absolutely last)
-  if command -v zoxide >/dev/null; then
-    ZOXIDE_CACHE="$HOME/.zoxide_cache.sh"
-    if [ ! -s "$ZOXIDE_CACHE" ]; then
-      zoxide init --cmd cd bash > "$ZOXIDE_CACHE"
-    fi
-    source "$ZOXIDE_CACHE"
-    bind -x '"\C-f": cdi' 2>/dev/null
-  fi
-else
-  # --- NATIVE LINUX / WSL / MACOS (DYNAMIC MODE) ---
-  # Unix handles process forking in milliseconds
-  
-  command -v starship >/dev/null && eval "$(starship init bash)"
-  
-  if command -v zoxide >/dev/null; then
-    eval "$(zoxide init --cmd cd bash)"
-    bind -x '"\C-f": cdi' 2>/dev/null
-  fi
-  
-  # Fastfetch is safe to run dynamically here
-  if command -v fastfetch >/dev/null 2>&1; then
-    fastfetch
-  fi
+# 1. Initialize Starship safely
+if command -v starship >/dev/null 2>&1; then
+  eval "$(starship init bash)"
+fi
+
+# 2. Zoxide
+if command -v zoxide >/dev/null; then
+  eval "$(zoxide init --cmd cd bash)"
+  bind -x '"\C-f": cdi' 2>/dev/null
 fi
