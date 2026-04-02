@@ -33,7 +33,7 @@ bind "set bell-style none"
 
 # Safely bind custom scripts
 [ -f "$HOME/scripts/motivation" ] && bind '"\em":"'$HOME'/scripts/motivation\n"'
-[ -f "$HOME/scripts/define_word" ] && bind '"\ee":"'$HOME'/scripts/define_word\n"'
+[ -f "$HOME/scripts/define" ] && bind '"\ee":"'$HOME'/scripts/define\n"'
 
 # ==========================================
 # 2. SSH Agent (The Final Fix)
