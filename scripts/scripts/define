@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# define_word - Fetches definition of a word (Dual-mode: CLI & GUI)
+# define - Fetches definition of a word (Dual-mode: CLI & GUI)
 
 set -euo pipefail
 export GTK_A11Y=none
