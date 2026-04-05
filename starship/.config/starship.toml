@@ -1,4 +1,3 @@
-command_timeout = 200
 "$schema" = 'https://starship.rs/config-schema.json'
 
 # --- 0. THE GLOBAL LAYOUT ---
