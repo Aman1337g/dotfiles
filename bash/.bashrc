@@ -68,34 +68,33 @@ fi
 # 3. Tool Initialization & Wrappers
 # ==========================================
 
-# --- NVM (Auto-detect & Lazy Load) ---
-for nvm_candidate in "$HOME/.nvm" "${XDG_CONFIG_HOME:-$HOME/.config}/nvm"; do
-  if [ -d "$nvm_candidate" ]; then
-    export NVM_DIR="$nvm_candidate"
-    nvm_init() {
-      unset -f nvm node npm npx
-      [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
-      [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
+# --- NVM Lazy Load (Git Bash Safe) ---
+detect_nvm() {
+  for nvm_candidate in "$HOME/.nvm" "${XDG_CONFIG_HOME:-$HOME/.config}/nvm"; do
+    [ -d "$nvm_candidate" ] && {
+      export NVM_DIR="$nvm_candidate"
+      return 0
     }
-    nvm() {
-      nvm_init
-      nvm "$@"
-    }
-    node() {
-      nvm_init
-      node "$@"
-    }
-    npm() {
-      nvm_init
-      npm "$@"
-    }
-    npx() {
-      nvm_init
-      npx "$@"
-    }
-    break
-  fi
-done
+  done
+  return 1
+}
+
+nvm_init() {
+  # 1. Use unalias instead of unset -f to cleanly remove the tripwires
+  unalias nvm node npm npx 2>/dev/null
+  [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+  [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
+}
+
+if detect_nvm; then
+  # 2. nvm is a shell function, so we drop 'command' here
+  alias nvm='nvm_init; nvm'
+
+  # node, npm, and npx are real binaries, so 'command' is perfect
+  alias node='nvm_init; command node'
+  alias npm='nvm_init; command npm'
+  alias npx='nvm_init; command npx'
+fi
 
 # --- Pyenv (auto-detect & future-proof) ---
 if [ -d "$HOME/.pyenv" ]; then
