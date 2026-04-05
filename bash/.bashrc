@@ -36,68 +36,71 @@ bind "set bell-style none"
 [ -f "$HOME/scripts/define" ] && bind '"\ee":"'$HOME'/scripts/define\n"'
 
 # ==========================================
-# 2. SSH Agent (The Final Fix)
+# 2. SSH Agent (Zero-Fork & Crash-Proof)
 # ==========================================
-# Fallback: Get username from system if $USER is unset
-_UNAME=${USER:-$(id -un)}
+export SSH_AUTH_SOCK="/tmp/ssh-agent-${USER:-$(id -un)}.sock"
 
-# Use the safe, discovered username for the socket
-export SSH_AUTH_SOCK="/tmp/ssh-agent-$_UNAME.sock"
+# If the agent is dead or the socket is stale, ssh-add -l will fail
+if ! SSH_AUTH_SOCK="$SSH_AUTH_SOCK" ssh-add -l >/dev/null 2>&1; then
+  # Clean up stale socket
+  rm -f "$SSH_AUTH_SOCK" >/dev/null 2>&1
 
-# Start agent only if the socket file is missing
-if [ ! -S "$SSH_AUTH_SOCK" ]; then
-  # Kill only agents belonging to THIS discovered user
-  pkill -u "$_UNAME" ssh-agent >/dev/null 2>&1
-  rm -f "$SSH_AUTH_SOCK"
-  ssh-agent -a "$SSH_AUTH_SOCK" >/dev/null
+  # Start fresh agent
+  eval "$(ssh-agent -s -a "$SSH_AUTH_SOCK")" >/dev/null
+
+  # Load keys only on initialization
+  for key in ~/.ssh/id_ed25519 ~/.ssh/wsl_spglobal ~/.ssh/id_ed25519_amandev; do
+    [ -f "$key" ] && ssh-add "$key" 2>/dev/null
+  done
 fi
-
-# Key Loader Helper
-load_ssh_key() {
-  local key=$1
-  if [ -f "$key" ]; then
-    # Check if key is already in agent by fingerprint
-    if ! ssh-add -l | grep -q "$(ssh-keygen -lf "$key" | awk '{print $2}')"; then
-      ssh-add "$key" 2>/dev/null
-    fi
-  fi
-}
-
-# Load keys into the agent
-load_ssh_key ~/.ssh/id_ed25519
-load_ssh_key ~/.ssh/wsl_spglobal
-load_ssh_key ~/.ssh/id_ed25519_amandev
 
 # ==========================================
 # 3. Tool Initialization & Wrappers
 # ==========================================
 
-# --- NVM (Added a fallback in case XDG_CONFIG_HOME is empty on a fresh OS) ---
-export NVM_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/nvm"
-[ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
-[ -s "$NVM_DIR/bash_completion" ] && . "$NVM_DIR/bash_completion"
+# --- NVM (Auto-detect & Lazy Load) ---
+for nvm_candidate in "$HOME/.nvm" "${XDG_CONFIG_HOME:-$HOME/.config}/nvm"; do
+  if [ -d "$nvm_candidate" ]; then
+    export NVM_DIR="$nvm_candidate"
+    nvm_init() {
+      unset -f nvm node npm npx
+      [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+      [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
+    }
+    nvm() {
+      nvm_init
+      nvm "$@"
+    }
+    node() {
+      nvm_init
+      node "$@"
+    }
+    npm() {
+      nvm_init
+      npm "$@"
+    }
+    npx() {
+      nvm_init
+      npx "$@"
+    }
+    break
+  fi
+done
 
-# --- Pyenv (Safe Initialization & Idempotent PATH for Windows Git Bash) ---
-if [ -d "$HOME/.pyenv/bin" ]; then
-  # 🛡️ Only add to PATH if it is not already there
-  if [[ ":$PATH:" != *":$HOME/.pyenv/bin:"* ]]; then
-    export PATH="$HOME/.pyenv/bin:$PATH"
-  fi
-  # Only init if pyenv is a real executable, not a broken Windows symlink
-  if command -v pyenv >/dev/null 2>&1 && [ -x "$HOME/.pyenv/libexec/pyenv" ]; then
-    eval "$(pyenv init -)"
-  fi
+# --- Pyenv (auto-detect & future-proof) ---
+if [ -d "$HOME/.pyenv" ]; then
+  export PATH="$HOME/.pyenv/bin:$PATH"
+  eval "$(pyenv init -)"
 fi
 
-# --- FZF Keybindings (The Ctrl+R Upgrade) ---
+# --- FZF Keybindings (No subprocess execution) ---
 if command -v fzf >/dev/null 2>&1; then
-  # Debian/Ubuntu apt location
   if [ -f /usr/share/doc/fzf/examples/key-bindings.bash ]; then
     source /usr/share/doc/fzf/examples/key-bindings.bash
-  # Homebrew location
-  elif [ -f "$(brew --prefix 2>/dev/null)/opt/fzf/shell/key-bindings.bash" ]; then
-    source "$(brew --prefix 2>/dev/null)/opt/fzf/shell/key-bindings.bash"
-  # Standard git clone location
+  elif [ -f /opt/homebrew/opt/fzf/shell/key-bindings.bash ]; then
+    source /opt/homebrew/opt/fzf/shell/key-bindings.bash
+  elif [ -f /usr/local/opt/fzf/shell/key-bindings.bash ]; then
+    source /usr/local/opt/fzf/shell/key-bindings.bash
   elif [ -f ~/.fzf.bash ]; then
     source ~/.fzf.bash
   fi
