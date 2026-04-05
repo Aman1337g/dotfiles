@@ -36,22 +36,32 @@ bind "set bell-style none"
 [ -f "$HOME/scripts/define" ] && bind '"\ee":"'$HOME'/scripts/define\n"'
 
 # ==========================================
-# 2. SSH Agent (Zero-Fork & Crash-Proof)
+# 2. SSH Agent (Universal Env-File Pattern)
 # ==========================================
-export SSH_AUTH_SOCK="/tmp/ssh-agent-${USER:-$(id -un)}.sock"
+export SSH_ENV="$HOME/.ssh/agent.env"
 
-# If the agent is dead or the socket is stale, ssh-add -l will fail
-if ! SSH_AUTH_SOCK="$SSH_AUTH_SOCK" ssh-add -l >/dev/null 2>&1; then
-  # Clean up stale socket
-  rm -f "$SSH_AUTH_SOCK" >/dev/null 2>&1
+_start_agent() {
+  # Start agent, strip the echo commands, and save to a file
+  ssh-agent -s | sed 's/^echo/#echo/' >"$SSH_ENV"
+  chmod 600 "$SSH_ENV"
+  . "$SSH_ENV" >/dev/null
 
-  # Start fresh agent
-  eval "$(ssh-agent -s -a "$SSH_AUTH_SOCK")" >/dev/null
-
-  # Load keys only on initialization
+  # Load keys silently
   for key in ~/.ssh/id_ed25519 ~/.ssh/wsl_spglobal ~/.ssh/id_ed25519_amandev; do
-    [ -f "$key" ] && ssh-add "$key" 2>/dev/null
+    [ -f "$key" ] && ssh-add "$key" >/dev/null 2>&1
   done
+}
+
+# If the env file exists, source it to get the socket paths
+if [ -f "$SSH_ENV" ]; then
+  . "$SSH_ENV" >/dev/null
+
+  # Test if the agent is alive AND reachable
+  if ! ssh-add -l >/dev/null 2>&1; then
+    _start_agent
+  fi
+else
+  _start_agent
 fi
 
 # ==========================================
