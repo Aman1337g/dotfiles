@@ -74,9 +74,11 @@ style = "bg:nord_pill_3 fg:nord_green"
 format = '([](nord_pill_3)[ $symbol $branch ]($style)[ ](nord_pill_3))'
 
 [git_status]
+# Optimize the Git status module for large mono-repos or Windows filesystems
 style = "bg:nord_pill_3 fg:nord_red"
 # Wrapped in () so the pill only exists if there is actual status text
 format = '([](nord_pill_3)[ $all_status$ahead_behind ]($style)[ ](nord_pill_3))'
+ignore_submodules = true
 
 # --- 4. THE LANGUAGE BLOCKS ---
 # All wrapped in () to prevent "Ghost Pills" during split screens
