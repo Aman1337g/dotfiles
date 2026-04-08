@@ -1,0 +1,57 @@
+#!/usr/bin/env bash
+
+# Ensure we're inside a git repo
+if ! git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+  echo "Error: Not inside a git repository."
+  exit 1
+fi
+
+echo "Enter secrets to check."
+echo "(Paste a secret and press Enter. Leave blank to start searching.)"
+echo
+
+SECRETS=()
+
+while true; do
+  read -s -p "Enter Secret: " INPUT_SECRET
+  echo
+
+  [ -z "$INPUT_SECRET" ] && break
+  SECRETS+=("$INPUT_SECRET")
+done
+
+if [ ${#SECRETS[@]} -eq 0 ]; then
+  echo "No secrets provided. Exiting."
+  exit 0
+fi
+
+echo
+echo "Starting search for ${#SECRETS[@]} secret(s)..."
+
+for SECRET in "${SECRETS[@]}"; do
+  echo "========================================="
+  echo "Checking secret: ***[REDACTED]***"
+  echo "========================================="
+
+  MATCHES=$(git log --all --oneline --source -S "$SECRET")
+
+  if [ -z "$MATCHES" ]; then
+    echo "No matches found."
+    continue
+  fi
+
+  echo "Matches found!"
+  echo
+
+  # Deduplicate commit SHAs
+  COMMIT_SHAS=$(echo "$MATCHES" | awk '{print $1}' | sort -u)
+
+  for COMMIT_SHA in $COMMIT_SHAS; do
+    echo "----"
+    echo "Commit: $COMMIT_SHA"
+    echo "Message: $(git log -1 --format=%s "$COMMIT_SHA")"
+    echo "Branches containing this commit:"
+    git branch -a --contains "$COMMIT_SHA" | sed 's/^/  /'
+    echo
+  done
+done

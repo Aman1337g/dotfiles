@@ -104,7 +104,7 @@ format = '([](nord_blue)[ $symbol( $version) ]($style)[ ](nord_blue))'
 [python]
 symbol = ""
 style = "bg:nord_blue fg:nord_bg"
-format = '([](nord_blue)[ $symbol( $version) ]($style)[ ](nord_blue))'
+format = '([](nord_blue)[ $symbol( $version)( \($virtualenv\)) ]($style)[ ](nord_blue))'
 
 [php]
 symbol = ""
