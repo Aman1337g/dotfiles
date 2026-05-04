@@ -30,6 +30,8 @@ _append_path "$HOME/.local/bin"
 _append_path "$HOME/scripts"
 _append_path "/opt/nvim-linux64/bin"
 _append_path "$HOME/.cargo/bin"
+_append_path "$HOME/.local/share/mise/shims"
+_append_path "$HOME/AppData/Local/mise/shims"
 
 # --- Language Toolchains ---
 export PYENV_ROOT="$HOME/.pyenv"
