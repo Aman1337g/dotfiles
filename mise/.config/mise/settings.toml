@@ -1,0 +1,9 @@
+# ~/.config/mise/settings.toml
+# Flat file — no [section] header needed
+
+# Disable the network version check entirely.
+# Eliminates the ~200-300ms GitHub API call on every mise invocation.
+check_mise_update = false
+
+# Don't auto-install missing tools on every command — require explicit 'mise install'
+not_found_auto_install = false

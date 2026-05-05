@@ -334,21 +334,37 @@ alias deploy='~/.dotfiles/setup' # Windows "GitOps" Deployment
 alias pomo-stats='tail -n 10 ~/pomodoro_log.md | column -t -s "|"'
 
 pomo() {
-  # Arguments: pomo "Task Name" [work_min] [break_min] [cycles]
+  # Arguments: pomo "Task Name" [work_min] [break_min] [cycles] [long_break_min]
   local task="${1:-General Focus}"
   local work=${2:-25}
   local break_duration=${3:-5}
   local cycles=${4:-4}
+  local long_break=${5:-15}
   local log_file="$HOME/pomodoro_log.md"
 
-  # Live countdown helper
+  local RED='\033[0;31m' GREEN='\033[0;32m' YELLOW='\033[1;33m'
+  local CYAN='\033[0;36m' BOLD='\033[1m' RESET='\033[0m'
+
+  # Live countdown helper — press Enter to skip remaining time
   countdown() {
     local secs=$(($1 * 60))
+    local color="${2:-}"
+    # Save terminal state; restore it on return OR if Ctrl-C kills pomo mid-tick
+    local _saved_tty
+    _saved_tty=$(stty -g 2>/dev/null)
+    trap 'stty "$_saved_tty" 2>/dev/null' RETURN INT
     while [ $secs -gt 0 ]; do
-      printf "\r⏳ %02d:%02d " $((secs / 60)) $((secs % 60))
-      sleep 1
+      printf "\r${color}⏳ %02d:%02d${RESET}  [Enter to skip] " $((secs / 60)) $((secs % 60))
+      # -r only (no -s): no echo suppression, so Ctrl-C can never break terminal
+      if IFS= read -t 1 -r; then
+        printf "\r%-50s\r" " "
+        stty "$_saved_tty" 2>/dev/null
+        return 0
+      fi
       : $((secs--))
     done
+    stty "$_saved_tty" 2>/dev/null
+    printf "\r%-50s\r" " "
     echo ""
   }
 
@@ -364,7 +380,9 @@ pomo() {
     fi
 
     if grep -qi microsoft /proc/version 2>/dev/null; then
-      (powershell.exe -c "(New-Object Media.SoundPlayer 'C:\Windows\Media\notify.wav').PlaySync()" >/dev/null 2>&1 &)
+      # BUG FIX: notify.wav is absent on modern Windows; probe common paths and
+      # fall back to a built-in SystemSounds alert so sound always plays.
+      (powershell.exe -NoProfile -WindowStyle Hidden -c "\$f=@('C:\Windows\Media\Windows Notify.wav','C:\Windows\Media\notify.wav','C:\Windows\Media\Windows Ding.wav') | Where-Object{Test-Path \$_} | Select-Object -First 1; if(\$f){(New-Object System.Media.SoundPlayer(\$f)).PlaySync()}else{[System.Media.SystemSounds]::Exclamation.Play();Start-Sleep -Seconds 1}" >/dev/null 2>&1 &)
     elif [[ "$OSTYPE" == "darwin"* ]]; then
       (afplay /System/Library/Sounds/Glass.aiff >/dev/null 2>&1 &)
     elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
@@ -377,22 +395,24 @@ pomo() {
   }
 
   clear
-  echo "🍅 Starting Pomodoro for: **$task**"
-  echo "   $cycles cycles of $work min work / $break_duration min break."
+  echo -e "${BOLD}${CYAN}🍅 Pomodoro: $task${RESET}"
+  echo -e "   ${CYAN}$cycles × ${work}m work / ${break_duration}m break | Long break: ${long_break}m${RESET}\n"
+
+  local start_epoch=$(date +%s)
 
   for ((i = 1; i <= cycles; i++)); do
-    echo "-----------------------------------"
-    echo "🔥 Cycle $i/$cycles: Time to focus!"
-    send_alert "Pomodoro" "Cycle $i: Focus for $work minutes!"
-    countdown $work
+    echo -e "${BOLD}── Cycle $i / $cycles ──────────────────────────${RESET}"
+    echo -e "${GREEN}🔥 Focus! ($work min)${RESET}"
+    send_alert "Pomodoro – Cycle $i/$cycles" "Focus for $work minutes on: $task"
+    countdown $work "$GREEN"
 
     if [ $i -lt $cycles ]; then
-      echo "☕ Break time! Step away for $break_duration minutes."
-      send_alert "Pomodoro Break" "Take $break_duration minutes off."
-      countdown $break_duration
+      echo -e "${YELLOW}☕ Short break — $break_duration min${RESET}"
+      send_alert "Pomodoro – Break" "Short break: $break_duration min. Cycle $((i + 1)) up next."
+      countdown $break_duration "$YELLOW"
     else
-      echo "🎉 All cycles complete. Great job!"
-      send_alert "Pomodoro Done" "Session complete!"
+      echo -e "${BOLD}${GREEN}🎉 All $cycles cycles complete!${RESET}"
+      send_alert "Pomodoro Done" "Session complete: $task"
 
       if [ ! -f "$log_file" ]; then
         echo "# 🍅 Pomodoro Session Log" >"$log_file"
@@ -402,9 +422,20 @@ pomo() {
 
       local timestamp=$(date +'%Y-%m-%d %I:%M %p')
       local total_mins=$((work * cycles))
+      local elapsed=$(( ($(date +%s) - start_epoch) / 60 ))
 
       echo "- [x] **$timestamp** | ⏱️ $total_mins min ($cycles cycles) | **Task:** $task" >>"$log_file"
-      echo "📝 Logged session to $log_file"
+
+      echo -e "\n${BOLD}📊 Session Summary${RESET}"
+      printf "   %-16s %s\n" "Task:" "$task"
+      printf "   %-16s %d min\n" "Focus time:" "$total_mins"
+      printf "   %-16s %d min\n" "Total elapsed:" "$elapsed"
+      printf "   %-16s %d\n" "Cycles:" "$cycles"
+      echo -e "${CYAN}📝 Logged → $log_file${RESET}"
+
+      echo -e "\n${CYAN}🌿 Long break — $long_break min. Well deserved!${RESET}"
+      send_alert "Pomodoro – Long Break" "Take $long_break minutes off. You earned it!"
+      countdown $long_break "$CYAN"
     fi
   done
 }

@@ -4,6 +4,11 @@ if [ -z "$PROFILE_LOADED" ] && [ -f "$HOME/.profile" ]; then
   source "$HOME/.profile"
 fi
 
+# ── Startup profiler (set BASH_PROFILE=1 in env to enable) ──────────────────
+# BASH_PROFILE=1 bash -i -c exit
+_S0=$(date +%s%3N)
+_bench() { [[ -n "$BASH_PROFILE" ]] && printf '[startup] %-22s %dms\n' "$1" "$(( $(date +%s%3N) - _S0 ))" >&2; }
+
 # ==========================================
 # ~/.bashrc - Interactive Shell
 # ==========================================
@@ -64,13 +69,16 @@ _start_agent() {
 if [ -f "$SSH_ENV" ]; then
   . "$SSH_ENV" >/dev/null
 
-  # Test if the agent is alive AND reachable
-  if ! "$_ADD_BIN" -l >/dev/null 2>&1; then
+  # Guard: skip the slow ssh-add probe entirely if the socket file is gone.
+  # After a WSL restart /tmp is wiped, leaving a stale path in agent.env.
+  # Calling ssh-add against a missing socket causes a ~10 s TCP timeout.
+  if [ -z "$SSH_AUTH_SOCK" ] || [ ! -S "$SSH_AUTH_SOCK" ] || ! "$_ADD_BIN" -l >/dev/null 2>&1; then
     _start_agent
   fi
 else
   _start_agent
 fi
+_bench "ssh-agent"
 
 # ==========================================
 # 3. Tool Initialization & Wrappers
@@ -104,11 +112,7 @@ if detect_nvm; then
   alias npx='nvm_init; command npx'
 fi
 
-# --- Pyenv (auto-detect & future-proof) ---
-if [ -d "$HOME/.pyenv" ]; then
-  export PATH="$HOME/.pyenv/bin:$PATH"
-  eval "$(pyenv init -)"
-fi
+_bench "nvm setup"
 
 # --- FZF Keybindings (Cross-Platform & Windows Safe) ---
 if command -v fzf >/dev/null 2>&1; then
@@ -164,15 +168,26 @@ if command -v mise >/dev/null 2>&1 || [ -f "$HOME/.local/bin/mise.exe" ]; then
     # We bypass 'activate' and manually inject both possible Windows shim locations.
     export PATH="$HOME/AppData/Local/mise/shims:$HOME/.local/share/mise/shims:$PATH"
   else
-    # Safe to use standard activation on Unix systems
-    eval "$(mise activate bash)"
+    # Lazy-load mise: add shims to PATH immediately (tools usable at once),
+    # but defer the expensive 'mise activate bash' until first cd or mise call.
+    # Fixes ~35 s WSL startup caused by mise scanning the filesystem on activate.
+    export PATH="$HOME/.local/share/mise/shims:$PATH"
+    _mise_lazy_activate() {
+      unset -f cd _mise_lazy_activate
+      unalias mise 2>/dev/null
+      eval "$(command mise activate bash)"
+    }
+    alias mise='_mise_lazy_activate; command mise'
+    cd() { _mise_lazy_activate; builtin cd "$@"; }
   fi
 fi
+_bench "mise activate"
 
 # ==========================================
 # 4. Aliases (Must be loaded BEFORE Zoxide)
 # ==========================================
 [ -f "$HOME/.bash_aliases" ] && . "$HOME/.bash_aliases"
+_bench "bash_aliases"
 
 # ==========================================
 # ⚡ TOOL INITIALIZATION (Cross-platform clean)
@@ -212,15 +227,34 @@ if [[ "$OSTYPE" == msys* || "$OSTYPE" == cygwin* ]]; then
 else
   # 🐧 LINUX / WSL / MAC / TERMUX / CONTAINERS
 
-  # --- Starship (your main prompt everywhere else) ---
+  # --- Starship (cached init — regenerates only when binary changes) ---
   if command -v starship >/dev/null 2>&1; then
     export STARSHIP_CONFIG="$HOME/.config/starship.toml"
-    eval "$(starship init bash)"
+    _starship_cache="$HOME/.cache/starship-init.bash"
+    _starship_bin="$(command -v starship)"
+    # Regenerate cache if missing or older than the starship binary itself
+    if [ ! -f "$_starship_cache" ] || [ "$_starship_bin" -nt "$_starship_cache" ]; then
+      mkdir -p "$HOME/.cache"
+      starship init bash >| "$_starship_cache"
+    fi
+    source "$_starship_cache"
+    unset _starship_cache _starship_bin
   fi
+  _bench "starship init"
 
-  # --- Zoxide ---
+  # --- Zoxide (cached init) ---
   if command -v zoxide >/dev/null 2>&1; then
-    eval "$(zoxide init --cmd cd bash)"
+    _zoxide_cache="$HOME/.cache/zoxide-init.bash"
+    _zoxide_bin="$(command -v zoxide)"
+    if [ ! -f "$_zoxide_cache" ] || [ "$_zoxide_bin" -nt "$_zoxide_cache" ]; then
+      mkdir -p "$HOME/.cache"
+      zoxide init --cmd cd bash >| "$_zoxide_cache"
+    fi
+    source "$_zoxide_cache"
     bind -x '"\C-f": cdi' 2>/dev/null
+    unset _zoxide_cache _zoxide_bin
   fi
+  _bench "zoxide init"
 fi
+
+unset -f _bench _S0 2>/dev/null; unset _S0 2>/dev/null

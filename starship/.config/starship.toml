@@ -105,7 +105,10 @@ format = '([](nord_blue)[ $symbol( $version) ]($style)[ ](nord_blue))'
 symbol = ""
 style = "bg:nord_blue fg:nord_bg"
 format = '([](nord_blue)[ $symbol( $version)( \($virtualenv\)) ]($style)[ ](nord_blue))'
-
+# Only show in actual Python projects — not in ~ where loose .py files live
+detect_files = ["requirements.txt", "pyproject.toml", "setup.py", "setup.cfg", "Pipfile", "tox.ini"]
+detect_extensions = []  # Override default ["py"] — prevents matching loose scripts in ~
+detect_folders = [".venv", "venv"]
 [php]
 symbol = ""
 style = "bg:nord_blue fg:nord_bg"
