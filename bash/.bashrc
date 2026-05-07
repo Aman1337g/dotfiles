@@ -7,7 +7,17 @@ fi
 # ── Startup profiler (set BASH_PROFILE=1 in env to enable) ──────────────────
 # BASH_PROFILE=1 bash -i -c exit
 _S0=$(date +%s%3N)
-_bench() { [[ -n "$BASH_PROFILE" ]] && printf '[startup] %-22s %dms\n' "$1" "$(( $(date +%s%3N) - _S0 ))" >&2; }
+_S_LAST=$_S0
+_bench() {
+  if [[ -n "$BASH_PROFILE" ]]; then
+    local now delta total
+    now=$(date +%s%3N)
+    delta=$((now - _S_LAST))
+    total=$((now - _S0))
+    printf '[startup] %-18s +%4dms  total=%4dms\n' "$1" "$delta" "$total" >&2
+    _S_LAST=$now
+  fi
+}
 
 # ==========================================
 # ~/.bashrc - Interactive Shell
@@ -60,7 +70,7 @@ _start_agent() {
   . "$SSH_ENV" >/dev/null
 
   # Load keys silently
-  for key in ~/.ssh/id_ed25519 ~/.ssh/wsl_spglobal ~/.ssh/id_ed25519_amandev; do
+  for key in ~/.ssh/id_ed25519 ~/.ssh/id_work ~/.ssh/id_ed25519_amandev; do
     [ -f "$key" ] && "$_ADD_BIN" "$key" >/dev/null 2>&1
   done
 }
@@ -257,7 +267,7 @@ else
   _bench "zoxide init"
 fi
 
-unset -f _bench _S0 2>/dev/null; unset _S0 2>/dev/null
+unset -f _bench _S0 _S_LAST 2>/dev/null; unset _S0 _S_LAST 2>/dev/null
 
 if [ -f "$HOME/.local/bin/env" ]; then
   . "$HOME/.local/bin/env"
