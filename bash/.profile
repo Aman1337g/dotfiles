@@ -71,3 +71,5 @@ unset -f _append_path
 if [ -n "$BASH_VERSION" ] && [ -f "$HOME/.bashrc" ]; then
   . "$HOME/.bashrc"
 fi
+
+. "$HOME/.local/share/../bin/env"

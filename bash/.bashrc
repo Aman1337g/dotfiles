@@ -258,3 +258,5 @@ else
 fi
 
 unset -f _bench _S0 2>/dev/null; unset _S0 2>/dev/null
+
+. "$HOME/.local/share/../bin/env"
