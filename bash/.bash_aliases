@@ -48,7 +48,26 @@ md() { mkdir -p "$1" && cd "$1" || return 1; }
 # ==========================================
 # Config & Editors (Uses $EDITOR fallback)
 # ==========================================
-alias dotfiles='brave-browser --profile-directory=Default https://github.com/Aman1337g/dotfiles >/dev/null 2>&1 & disown; exit'
+dotfiles() {
+  local url="https://github.com/Aman1337g/dotfiles"
+
+  if _has brave-browser; then
+    brave-browser --profile-directory=Default "$url" >/dev/null 2>&1 & disown
+  elif _has xdg-open; then
+    xdg-open "$url" >/dev/null 2>&1 & disown
+  elif _has open; then
+    open "$url" >/dev/null 2>&1 & disown
+  elif _has wslview; then
+    wslview "$url" >/dev/null 2>&1 & disown
+  elif _has powershell.exe; then
+    powershell.exe -NoProfile -Command "Start-Process '$url'" >/dev/null 2>&1 & disown
+  elif _has cmd.exe; then
+    cmd.exe /C start "" "$url" >/dev/null 2>&1 & disown
+  else
+    echo "$url"
+    return 1
+  fi
+}
 alias bedit='$EDITOR ~/.bashrc'
 alias aedit='$EDITOR ~/.bash_aliases'
 alias pedit='$EDITOR ~/.profile'
