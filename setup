@@ -71,7 +71,7 @@ if [ "$AUTO_MODE" = false ]; then
     esac
   fi
 
-  if [[ "$ENV_TYPE" =~ (linux|mac) ]]; then
+  if [[ "$ENV_TYPE" =~ ^(linux|mac|wsl)$ ]]; then
     read -p "🖥️  Install GUI Desktop Apps (Kitty, Zathura, etc.)? (y/n): " gui_choice </dev/tty
     if [[ "$gui_choice" =~ ^[Yy]$ ]]; then
       INSTALL_GUI=true
@@ -118,7 +118,7 @@ cd "$DOTFILES_DIR" || exit 1
 chmod +x install_tools link setup
 
 # ==========================================
-# � Helper: Centralized Backup Management
+# 🔧 Helper: Centralized Backup Management
 # ==========================================
 BACKUP_ROOT="${XDG_STATE_HOME:-$HOME/.local/state}/dotfiles/backups"
 KEEP_BACKUPS="${DOTFILES_KEEP_BACKUPS:-5}"
@@ -190,6 +190,7 @@ if ! command -v stow >/dev/null 2>&1; then
 else
   echo "✅ GNU Stow detected. Proceeding with modular links..."
   echo "  -> 🧹 Clearing runway for Stow (Handling old symlinks and defaults)..."
+  SHOULD_INSTALL_GUI=false
 
   # 1. Expanded list of ALL targets (CLI + GUI)
   STOW_TARGETS=(
@@ -212,8 +213,14 @@ else
   echo "  -> 💻 Stowing Core CLI Tools..."
   stow --dir="$DOTFILES_DIR" --target="$HOME" bash scripts git nvim tmux starship fastfetch mise
 
+  if [ "$INSTALL_GUI" = true ]; then
+    SHOULD_INSTALL_GUI=true
+  elif [[ "$ENV_TYPE" =~ ^(linux|mac)$ ]] && { [ -n "${WAYLAND_DISPLAY:-}" ] || [ -n "${DISPLAY:-}" ]; }; then
+    SHOULD_INSTALL_GUI=true
+  fi
+
   # Stow GUI only if requested
-  if [ "$INSTALL_GUI" = true ] || [ -n "${WAYLAND_DISPLAY:-}" ] || [ -n "${DISPLAY:-}" ]; then
+  if [ "$SHOULD_INSTALL_GUI" = true ]; then
     echo "  -> 🖥️  GUI Environment detected! Stowing Desktop Apps..."
     stow --dir="$DOTFILES_DIR" --target="$HOME" code kitty fonts sway yazi zathura qutebrowser
 
