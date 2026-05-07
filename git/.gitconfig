@@ -25,7 +25,8 @@
     # Use GCM for Windows if available, else keep 'store'
     # sudo ln -s "/mnt/c/Program Files/Git/mingw64/bin/git-credential-manager.exe" /usr/local/bin/git-credential-manager.exe
     # echo -e "protocol=https\nhost=github.com" | git credential fill
-    helper = "!$HOME/scripts/git-credential-universal"
+    helper = "!$HOME/.dotfiles/scripts/scripts/git-credential-universal"
+    useHttpPath = true
 
 [credential "https://github.com"]
     # Your username discovered from 'ssh -T git@github.com'
@@ -85,6 +86,10 @@
 [includeIf "gitdir/i:C:/Users/"]
     path = ~/.gitconfig-work
 
+# 3. Match WSL home-hosted work repositories
+[includeIf "gitdir/i:/home/aman/pvr-devops-devops-gitlab-ci-files/"]
+    path = ~/.gitconfig-work
+
 
 
 ; # ~/.gitconfig-work
@@ -96,14 +101,10 @@
       # Disables the global auto-signing for work repos
 ;     gpgsign = false
 ;
-; # Automatically rewrite standard URLs to use the 'spgi' SSH alias
-; [url "git@spgi:spglobal"]
-;     insteadOf = git@github.com:spglobal
-;
+; # Optional SSH fallback for work repos if your org allows it
 ; [core]
-;     # Fallback: Force work key if rewrite fails
-;     sshCommand = "ssh -i ~/.ssh/wsl_spglobal -o IdentitiesOnly=yes"
+;     sshCommand = "ssh -i ~/.ssh/id_work -o IdentitiesOnly=yes"
 ;
 ; [credential "https://github.com"]
-;     # Your username discovered from 'ssh -T git@spgi'
+;     # Work GitHub username for HTTPS token auth
 ;     username = <username>

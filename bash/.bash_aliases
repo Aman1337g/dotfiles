@@ -185,7 +185,8 @@ gtog() {
     return 1
   }
 
-  local current_email personal_email work_email name
+  local mode current_email personal_email work_email name origin repo
+  mode="${1:-toggle}"
   personal_email="97891757+Aman1337g@users.noreply.github.com"
   name="Aman Kumar Gupta"
 
@@ -198,15 +199,82 @@ gtog() {
 
   current_email=$(git config user.email)
 
-  if [ "$current_email" = "$work_email" ]; then
+  if [ "$mode" = "toggle" ]; then
+    if [ "$current_email" = "$work_email" ]; then
+      mode="personal"
+    else
+      mode="work"
+    fi
+  fi
+
+  case "$mode" in
+  work|w|work-https|wh)
+    echo "🏢 Switching to 💼 WORK profile (HTTPS token mode) for this repository..."
+    git config --local user.email "$work_email"
+    git config --local user.name "$name"
+
+    # Default to HTTPS token auth for work repos.
+    git config --local --unset core.sshCommand 2>/dev/null || true
+    git config --local credential.useHttpPath true
+
+    origin=$(git remote get-url origin 2>/dev/null || true)
+    if [[ "$origin" =~ ^git@spgi:spglobal-innersource/(.+)\.git$ ]]; then
+      repo="${BASH_REMATCH[1]}"
+      git remote set-url origin "https://github.com/spglobal-innersource/${repo}.git"
+      echo "🔁 origin switched to HTTPS: $(git remote get-url origin)"
+    elif [[ "$origin" =~ ^git@github.com:spglobal-innersource/(.+)\.git$ ]]; then
+      repo="${BASH_REMATCH[1]}"
+      git remote set-url origin "https://github.com/spglobal-innersource/${repo}.git"
+      echo "🔁 origin switched to HTTPS: $(git remote get-url origin)"
+    fi
+    ;;
+  work-ssh|ws)
+    echo "🏢 Switching to 💼 WORK profile (SSH fallback mode) for this repository..."
+    git config --local user.email "$work_email"
+    git config --local user.name "$name"
+    git config --local core.sshCommand "ssh -i ~/.ssh/id_work -o IdentitiesOnly=yes"
+
+    origin=$(git remote get-url origin 2>/dev/null || true)
+    if [[ "$origin" =~ ^https://github.com/spglobal-innersource/(.+)\.git$ ]]; then
+      repo="${BASH_REMATCH[1]}"
+      git remote set-url origin "git@github.com:spglobal-innersource/${repo}.git"
+      echo "🔁 origin switched to SSH: $(git remote get-url origin)"
+    elif [[ "$origin" =~ ^git@spgi:spglobal-innersource/(.+)\.git$ ]]; then
+      repo="${BASH_REMATCH[1]}"
+      git remote set-url origin "git@github.com:spglobal-innersource/${repo}.git"
+      echo "🔁 origin switched to SSH: $(git remote get-url origin)"
+    fi
+    ;;
+  personal|p)
     echo "🔄 Switching to 👤 PERSONAL profile for this repository..."
     git config --local user.email "$personal_email"
     git config --local user.name "$name"
-  else
-    echo "🏢 Switching to 💼 WORK profile for this repository..."
-    git config --local user.email "$work_email"
-    git config --local user.name "$name"
-  fi
+
+    # Remove work-only SSH override when switching back.
+    git config --local --unset core.sshCommand 2>/dev/null || true
+
+    origin=$(git remote get-url origin 2>/dev/null || true)
+    if [[ "$origin" =~ ^git@spgi:spglobal-innersource/(.+)\.git$ ]]; then
+      repo="${BASH_REMATCH[1]}"
+      git remote set-url origin "https://github.com/spglobal-innersource/${repo}.git"
+      echo "🔁 origin switched to HTTPS: $(git remote get-url origin)"
+    elif [[ "$origin" =~ ^git@github.com:spglobal-innersource/(.+)\.git$ ]]; then
+      repo="${BASH_REMATCH[1]}"
+      git remote set-url origin "https://github.com/spglobal-innersource/${repo}.git"
+      echo "🔁 origin switched to HTTPS: $(git remote get-url origin)"
+    fi
+    ;;
+  status|s)
+    echo "👤 Identity: $(git config user.name) <$(git config user.email)>"
+    echo "🔗 origin: $(git remote get-url origin 2>/dev/null || echo 'N/A')"
+    echo "🔐 core.sshCommand: $(git config --local core.sshCommand 2>/dev/null || echo '(global/default)')"
+    return 0
+    ;;
+  *)
+    echo "Usage: gtog [work|work-https|work-ssh|personal|toggle|status]"
+    return 1
+    ;;
+  esac
 
   echo "✅ Identity set: $(git config user.name) <$(git config user.email)>"
 }
