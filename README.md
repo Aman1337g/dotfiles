@@ -3,19 +3,64 @@
 A production-grade, cross-platform collection of dotfiles and environment configurations. Built for speed, portability, and robust fallback handling across Debian/Ubuntu, macOS, Alpine, Windows (WSL/Git Bash), Android (Termux), and Ephemeral Containers (DevPod/Docker).
 
 ## ✨ Features
-* **Mise-First Architecture:** Relegates native package managers (`apt`, `brew`) to basic lifelines, relying entirely on `mise` to dynamically provision exact versions of CLI tools (Neovim, Terraform, Eza, Starship) across every OS via environment-specific `config.toml` files.
-* **Corporate Proxy Immune:** Features a custom Windows-to-Linux Interop script (`sync_certs`) that automatically extracts Zscaler Root CAs from the Windows registry and injects them into the WSL trust store to prevent SSL handshake failures.
-* **Zero-Touch & Interactive Bootstrapper:** A single `setup` script orchestrates repository cloning, linking, and tool installation. Run it interactively via a CLI menu, or fully unattended using flags (`--auto`, `--env=container`).
+* **Mise-First Architecture:** Relegates native package managers (`apt`, `brew`) to basic lifelines, relying entirely on `mise` to dynamically provision exact versions of CLI tools (Neovim, Starship, Eza, FZF, Zoxide, Yazi, Bat, Node.js, Python, Terraform, kubectl, Helm) across every OS via environment-specific `config.toml` files.
+* **Corporate Proxy Immune:** Features a custom Windows-to-Linux interop script (`sync_certs`) that automatically extracts Zscaler Root CAs from the Windows registry and injects them into the WSL trust store to prevent SSL handshake failures.
+* **Zero-Touch & Interactive Bootstrapper:** A single `setup` script orchestrates repository cloning, linking, and tool installation. Run it interactively via a CLI menu, or fully unattended using flags (`--auto`, `--env=container`). A piped-execution guard automatically applies `--auto` when stdin is not a tty (e.g., `curl | bash`).
 * **The Ultimate Editor:** A fully customized, transparent [LazyVim](https://github.com/LazyVim/LazyVim) setup featuring the Nordic theme, pre-configured for DevOps workflows (Terraform, Python, YAML, JSON).
-* **Smart Environment Detection:** Uses a 3-tier detection system (Flags -> Interactive Prompt -> Wayland/X11 Heartbeat) to automatically decide whether to stow heavy GUI desktop apps (Kitty, Sway, Qutebrowser) or keep the environment headless.
-* **Idempotent Stow Runway:** Safely clears the runway for GNU Stow by detecting existing physical configurations and moving them to timestamped `.bak` files to prevent catastrophic overwrites or link failures.
+* **Smart Environment Detection:** Uses a 3-tier detection system (Flags → Interactive Prompt → Wayland/X11 Heartbeat) to automatically decide whether to stow heavy GUI desktop apps (Kitty, Sway, Qutebrowser, Zathura) or keep the environment headless.
+* **Idempotent Stow Runway:** Safely clears the runway for GNU Stow by detecting existing physical configurations and moving them to timestamped backup directories under `~/.local/state/dotfiles/backups/`, keeping only the 5 most recent runs.
+* **Git Identity Switcher:** The `gtog` shell function handles seamless switching between personal and work Git identities — including SSH key selection, remote URL mode (SSH vs. HTTPS), and credential routing — without leaving the terminal.
+* **Nord Everywhere:** Unified Nord color palette applied consistently across Kitty, Sway WM, Tmux (via `nord-tmux`), Qutebrowser, Starship prompt, Neovim, Yazi, and Zathura.
+
+---
+
+## � Repository Structure
+
+```
+~/.dotfiles/
+├── setup                        # Bootstrap orchestrator (interactive + --auto/--env flags)
+├── install_tools                # Universal tool installer (apt/brew/apk/pkg/winget + Mise)
+├── link                         # Manual symlink fallback when GNU Stow is unavailable
+├── tilingshell-settings.txt     # GNOME TilingShell extension config (dconf export)
+├── debian-custom-keybindings.ini # 34 GNOME custom shortcuts (dconf export)
+├── debian-wm-keybindings.ini    # GNOME window manager keybindings
+├── etc-copy-paste-hang-sol/     # sysctl.conf fix for clipboard hang issues in WSL
+│
+├── bash/                        # .profile, .bashrc, .bash_aliases
+├── code/                        # VS Code settings.json, keybindings.json, snippets/
+├── fastfetch/                   # Fastfetch system info configuration
+├── fonts/                       # JetBrainsMono Nerd Font + NotoColorEmoji TTFs
+├── git/                         # .gitconfig (delta, SSH signing, work includeIf) + .ssh/config
+├── kitty/                       # Kitty terminal - Nord theme, splits, custom kittens
+├── mise/                        # Mise config.toml per environment (linux/container/windows/mac)
+├── nvim/                        # LazyVim + Nordic theme, DevOps extras
+├── qutebrowser/                 # config.py (JS-off-by-default, Nord theme) 
+├── scripts/                     # 21 utility scripts (sync_certs, upgrade, cleanup, define, …)
+├── starship/                    # starship.toml - Nord powerline prompt
+├── sway/                        # Sway WM config (Nord, gaps, floating rules, wofi)
+├── tmux/                        # .tmux.conf (C-s prefix, nord-tmux, Alt+hjkl panes)
+├── windows-terminal/            # settings.json (copied, not symlinked)
+├── yazi/                        # Yazi file manager config, theme, keymap, plugins
+└── zathura/                     # zathurarc PDF viewer config
+```
+
+---
+
+## 🧰 Tools Managed by Mise
+
+| Tool | Environment |
+|---|---|
+| Neovim, Starship, FZF, Zoxide, Eza, Bat, Yazi, Node.js, Python, `usage`, Topgrade | All (universal) |
+| ripgrep, fd, Python 3.12 | Linux |
+| Terraform, kubectl, Helm, AWS CLI | Container/DevPod |
+| Neovim, Eza, FZF (disabled — use winget) | Windows |
 
 ---
 
 ## 🚀 Installation & Setup
 
 ### Option 1: The Zero-Touch Bootstrapper (Recommended)
-If you are on a fresh machine, VM, or DevContainer, you don't even need to clone the repository manually. Just run this single command. 
+If you are on a fresh machine, VM, or DevContainer, you don't even need to clone the repository manually. Just run this single command.
 
 It will securely download the setup engine, automatically clone the repo to `~/.dotfiles`, install all `mise` toolchains, and link your configurations in one shot:
 
@@ -38,7 +83,7 @@ If you prefer to review the scripts and run the pipeline manually, follow this e
 **1. Clone the Repository**
 
 ```bash
-git clone [https://github.com/Aman1337g/dotfiles.git](https://github.com/Aman1337g/dotfiles.git) ~/.dotfiles
+git clone https://github.com/Aman1337g/dotfiles.git ~/.dotfiles
 cd ~/.dotfiles
 ```
 
@@ -46,7 +91,11 @@ cd ~/.dotfiles
 
 ```bash
 # Standard Linux / macOS / WSL (Requires GNU Stow)
-stow bash scripts git nvim tmux starship fastfetch mise
+# Core (headless-safe):
+stow bash git nvim tmux starship fastfetch mise scripts yazi zathura code fonts
+
+# GUI extras (only on a machine with a display):
+stow kitty sway qutebrowser
 
 # Alternative: Windows Git Bash Fallback (No Stow Required)
 ./link
@@ -59,9 +108,10 @@ Runs the universal installer to grab system lifelines (`curl`, `git`), sync corp
 ./install_tools
 ```
 
-> **Note on Windows Terminal/WSL:**
-> Your `wsl/settings.json` is automatically copied via the `link` script to:
-> `AppData/Local/Packages/Microsoft.WindowsTerminal_8wekyb3d8bbwe/LocalState/settings.json`
+> **Note on Windows Terminal:**
+> `windows-terminal/settings.json` is **copied** (not symlinked) by the `link` script to:
+> `%LOCALAPPDATA%\Packages\Microsoft.WindowsTerminal_8wekyb3d8bbwe\LocalState\settings.json`
+> because UWP apps break symlinks on auto-save.
 
 -----
 
