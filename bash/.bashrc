@@ -259,4 +259,6 @@ fi
 
 unset -f _bench _S0 2>/dev/null; unset _S0 2>/dev/null
 
-. "$HOME/.local/share/../bin/env"
+if [ -f "$HOME/.local/bin/env" ]; then
+  . "$HOME/.local/bin/env"
+fi
