@@ -4,31 +4,94 @@
 # 🚨 FORCE GIT BASH TO USE REAL NTFS SYMLINKS ON WINDOWS
 # export MSYS="winsymlinks:nativestrict"
 
+set -euo pipefail
+
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)"
+DOTFILES_DIR="$SCRIPT_DIR"
+TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+BACKUP_ROOT="${XDG_STATE_HOME:-$HOME/.local/state}/dotfiles/backups"
+RUN_BACKUP_DIR="$BACKUP_ROOT/$TIMESTAMP"
+KEEP_BACKUPS="${DOTFILES_KEEP_BACKUPS:-5}"
+
 echo "========================================"
 echo "🔗 Starting Manual Symlink Fallback"
 echo "========================================"
 
-DOTFILES_DIR="$HOME/.dotfiles"
-TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+mkdir -p "$BACKUP_ROOT"
+
+backup_dest_for() {
+  local dest="$1"
+  local rel
+
+  if [[ "$dest" == "$HOME"/* ]]; then
+    rel="${dest#"$HOME"/}"
+  else
+    rel="${dest#/}"
+    rel="${rel//:/_}"
+  fi
+
+  printf '%s/%s' "$RUN_BACKUP_DIR" "$rel"
+}
+
+backup_existing() {
+  local dest="$1"
+  local backup_dest
+
+  backup_dest="$(backup_dest_for "$dest")"
+  mkdir -p "$(dirname "$backup_dest")"
+
+  echo "  📦 Backing up existing $dest to $backup_dest"
+  mv "$dest" "$backup_dest"
+}
+
+prune_old_backups() {
+  local keep="$1"
+  local backup_count=0
+  local old_backups=()
+  local backup_dir
+
+  [ -d "$BACKUP_ROOT" ] || return 0
+
+  while IFS= read -r backup_dir; do
+    backup_count=$((backup_count + 1))
+    if [ "$backup_count" -gt "$keep" ]; then
+      old_backups+=("$backup_dir")
+    fi
+  done < <(find "$BACKUP_ROOT" -mindepth 1 -maxdepth 1 -type d | sort -r)
+
+  if [ "${#old_backups[@]}" -eq 0 ]; then
+    return 0
+  fi
+
+  echo "🧹 Pruning old backup runs (keeping newest $keep)..."
+  for backup_dir in "${old_backups[@]}"; do
+    echo "  🗑️  Removing $backup_dir"
+    rm -rf "$backup_dir"
+  done
+}
 
 # Helper function to create links securely
 link_file() {
   local src="$1"
   local dest="$2"
+  local current_target=""
 
-  # Ensure destination directory exists
   mkdir -p "$(dirname "$dest")"
 
-  # Back up existing file/folder if it exists and is NOT a symlink
   if [ -e "$dest" ] && [ ! -L "$dest" ]; then
-    echo "  📦 Backing up existing $dest to ${dest}.${TIMESTAMP}.bak"
-    mv "$dest" "${dest}.${TIMESTAMP}.bak"
+    backup_existing "$dest"
   fi
 
-  # Create or update the symlink
+  if [ -L "$dest" ]; then
+    current_target="$(readlink "$dest" 2>/dev/null || true)"
+    if [ "$current_target" = "$src" ]; then
+      echo "  ✅ Already linked $(basename "$dest") -> $src"
+      return 0
+    fi
+  fi
+
   echo "  🔗 Linking $(basename "$dest") -> $src"
-  # We use rm -f first because nativestrict will fail if a fake symlink copy already exists
-  rm -f "$dest" 2>/dev/null
+  rm -f "$dest" 2>/dev/null || true
   ln -s "$src" "$dest"
 }
 
@@ -65,22 +128,31 @@ link_file "$DOTFILES_DIR/scripts/scripts" "$HOME/scripts"
 # 8. Mise
 link_file "$DOTFILES_DIR/mise/.config/mise" "$HOME/.config/mise"
 
-# 8. Windows Terminal (OS-Aware Copy, NOT Symlink)
+# 9. Windows Terminal (OS-Aware Copy, NOT Symlink)
 if [[ "$OSTYPE" == "msys" || "$OSTYPE" == "cygwin" ]]; then
   echo "🪟 Windows detected. Copying Windows Terminal settings..."
+  WT_SRC="$DOTFILES_DIR/windows-terminal/settings.json"
   WT_DEST="$HOME/AppData/Local/Packages/Microsoft.WindowsTerminal_8wekyb3d8bbwe/LocalState/settings.json"
 
-  if [ -f "$WT_DEST" ]; then
-    echo "  📦 Backing up Windows Terminal config..."
-    cp "$WT_DEST" "${WT_DEST}.${TIMESTAMP}.bak"
-  fi
+  mkdir -p "$(dirname "$WT_DEST")"
 
-  # NOTE: We MUST copy this, not link it. UWP apps like Windows Terminal
-  # often break or delete symlinks when they auto-save their own settings.
-  echo "  📝 Copying settings.json to LocalState"
-  cp "$DOTFILES_DIR/windows-terminal/settings.json" "$WT_DEST"
+  if [ -f "$WT_DEST" ] && cmp -s "$WT_SRC" "$WT_DEST"; then
+    echo "  ✅ Windows Terminal settings already up to date"
+  else
+    if [ -f "$WT_DEST" ]; then
+      backup_existing "$WT_DEST"
+    fi
+
+    # NOTE: We MUST copy this, not link it. UWP apps like Windows Terminal
+    # often break or delete symlinks when they auto-save their own settings.
+    echo "  📝 Copying settings.json to LocalState"
+    cp "$WT_SRC" "$WT_DEST"
+  fi
 fi
 
+prune_old_backups "$KEEP_BACKUPS"
+
+echo "🗂️  Backups stored under $BACKUP_ROOT"
 echo "========================================"
 echo "✅ Manual linking complete!"
 echo "========================================"

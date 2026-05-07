@@ -118,6 +118,63 @@ cd "$DOTFILES_DIR" || exit 1
 chmod +x install_tools link setup
 
 # ==========================================
+# � Helper: Centralized Backup Management
+# ==========================================
+BACKUP_ROOT="${XDG_STATE_HOME:-$HOME/.local/state}/dotfiles/backups"
+KEEP_BACKUPS="${DOTFILES_KEEP_BACKUPS:-5}"
+
+setup_backup_dest_for() {
+  local dest="$1"
+  local rel
+  
+  if [[ "$dest" == "$HOME"/* ]]; then
+    rel="${dest#"$HOME"/}"
+  else
+    rel="${dest#/}"
+    rel="${rel//:/_}"
+  fi
+  
+  printf '%s/%s' "$BACKUP_ROOT/$TIMESTAMP" "$rel"
+}
+
+setup_backup_existing() {
+  local dest="$1"
+  local backup_dest
+  
+  backup_dest="$(setup_backup_dest_for "$dest")"
+  mkdir -p "$(dirname "$backup_dest")"
+  
+  echo "  📦 Backing up $dest to $backup_dest"
+  mv "$dest" "$backup_dest"
+}
+
+setup_prune_old_backups() {
+  local keep="$1"
+  local backup_count=0
+  local old_backups=()
+  local backup_dir
+  
+  [ -d "$BACKUP_ROOT" ] || return 0
+  
+  while IFS= read -r backup_dir; do
+    backup_count=$((backup_count + 1))
+    if [ "$backup_count" -gt "$keep" ]; then
+      old_backups+=("$backup_dir")
+    fi
+  done < <(find "$BACKUP_ROOT" -mindepth 1 -maxdepth 1 -type d | sort -r)
+  
+  if [ "${#old_backups[@]}" -eq 0 ]; then
+    return 0
+  fi
+  
+  echo "🧹 Pruning old backup runs (keeping newest $keep)..."
+  for backup_dir in "${old_backups[@]}"; do
+    echo "  🗑️  Removing $backup_dir"
+    rm -rf "$backup_dir"
+  done
+}
+
+# ==========================================
 # 🔗 4. LINKING (Done BEFORE installing tools so Mise has its config)
 # ==========================================
 echo ""
@@ -142,13 +199,13 @@ else
   )
 
   TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+  mkdir -p "$BACKUP_ROOT"
 
   for target in "${STOW_TARGETS[@]}"; do
     if [ -L "$target" ]; then
       rm "$target" # Safely remove old symlinks
     elif [ -f "$target" ] || [ -d "$target" ]; then
-      echo "  📦 Backing up $target to ${target}_${TIMESTAMP}.bak"
-      mv "$target" "${target}_${TIMESTAMP}.bak"
+      setup_backup_existing "$target"
     fi
   done
 
@@ -165,6 +222,9 @@ else
       ./scripts/scripts/install_themes
     fi
   fi
+
+  setup_prune_old_backups "$KEEP_BACKUPS"
+  echo "🗂️  Backups stored under $BACKUP_ROOT"
 fi
 
 # ==========================================
