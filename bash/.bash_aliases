@@ -113,6 +113,18 @@ alias ane='git commit --amend --no-edit'
 alias pcf='git push --force-with-lease'
 alias clone='git clone'
 
+# git-token [-h host] [-u username]  → view stored credential
+# git-token-erase [-h host] [-u username]  → erase stored credential
+_git_cred_input() {
+  local host="github.com" user=""
+  while [[ $# -gt 0 ]]; do
+    case "$1" in -h|--host) host="$2"; shift 2 ;; -u|--user) user="$2"; shift 2 ;; esac
+  done
+  { printf "protocol=https\nhost=%s\n" "$host"; [ -n "$user" ] && printf "username=%s\n" "$user"; printf "\n"; }
+}
+git-token()       { _git_cred_input "$@" | git credential fill 2>/dev/null; }
+git-token-erase() { _git_cred_input "$@" | git credential reject && echo "✓ Erased"; }
+
 # ==========================================
 # Git Workflow (Functions)
 # ==========================================
