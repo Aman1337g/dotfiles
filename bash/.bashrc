@@ -129,16 +129,19 @@ if command -v fzf >/dev/null 2>&1; then
   # 1. Check for our universal downloaded copy first (Fixes Git Bash / Mise)
   if [ -f "$HOME/.fzf-key-bindings.bash" ]; then
     source "$HOME/.fzf-key-bindings.bash"
-  # 2. Debian/Ubuntu apt location
+  # 2. Arch/Void etc.
+  elif [ -f /usr/share/fzf/key-bindings.bash ]; then
+    source /usr/share/fzf/key-bindings.bash
+  # 3. Debian/Ubuntu apt location
   elif [ -f /usr/share/doc/fzf/examples/key-bindings.bash ]; then
     source /usr/share/doc/fzf/examples/key-bindings.bash
-  # 3. Homebrew location (ARM Mac)
+  # 4. Homebrew location (ARM Mac)
   elif [ -f /opt/homebrew/opt/fzf/shell/key-bindings.bash ]; then
     source /opt/homebrew/opt/fzf/shell/key-bindings.bash
-  # 4. Homebrew location (Intel Mac)
+  # 5. Homebrew location (Intel Mac)
   elif [ -f /usr/local/opt/fzf/shell/key-bindings.bash ]; then
     source /usr/local/opt/fzf/shell/key-bindings.bash
-  # 5. Standard git clone fallback
+  # 6. Standard git clone fallback
   elif [ -f ~/.fzf.bash ]; then
     source ~/.fzf.bash
   fi
