@@ -3,3 +3,4 @@
 ripgrep = "latest"
 fd = "latest"
 python = "3.12"
+delta = "latest"
