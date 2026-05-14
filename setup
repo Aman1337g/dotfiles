@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 # Aman's Ultimate Environment Bootstrapper (Interactive & Automatable)
 
+set -euo pipefail
+
 # ==========================================
 # ⚙️ 1. ARGUMENT PARSING & FLAGS
 # ==========================================

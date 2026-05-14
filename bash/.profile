@@ -69,6 +69,7 @@ unset -f _append_path
 # --- Load Bashrc if interactive ---
 # (Ensures aliases and prompt load for login shells)
 if [ -n "$BASH_VERSION" ] && [ -f "$HOME/.bashrc" ]; then
+  export PROFILE_LOADED=1
   . "$HOME/.bashrc"
 fi
 
