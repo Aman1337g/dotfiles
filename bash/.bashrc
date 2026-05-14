@@ -148,7 +148,7 @@ if command -v fzf >/dev/null 2>&1; then
 fi
 
 # --- Yazi Integration (POSIX safe mktemp wrapper) ---
-z() {
+yz() {
   local tmp cwd
   tmp="$(mktemp -t yazi-cwd.XXXXXX)" || return 1
   yazi "$@" --cwd-file="$tmp"

@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 # install_tools - Universal Environment Bootstrapper (Mise-First Architecture)
 
+set -euo pipefail
+
 echo "========================================"
 echo "🚀 Starting System Dependencies & Mise Engine..."
 echo "========================================"
@@ -82,7 +84,7 @@ elif _has apt || [[ "$ENV_TYPE" =~ (linux|wsl|container) ]]; then
   # --- 🐳 Docker Native Engine (Skip in Containers/WSL) ---
   if [ "$ENV_TYPE" != "container" ] && [ "$ENV_TYPE" != "wsl" ] && ! _has docker; then
     echo "🐳 Installing native Docker Engine..."
-    curl -k -fsSL https://get.docker.com -o get-docker.sh
+    curl -fsSL https://get.docker.com -o get-docker.sh
     # 🚨 Hack: permanently remove the 20-second sleep penalty
     sed -i 's/sleep 20/sleep 0/' get-docker.sh
     sudo sh get-docker.sh && rm get-docker.sh
@@ -93,7 +95,7 @@ elif _has apt || [[ "$ENV_TYPE" =~ (linux|wsl|container) ]]; then
   # --- 🚀 DevPod CLI ---
   if ! _has devpod; then
     echo "🚀 Installing DevPod CLI..."
-    curl -k -L -o devpod "https://github.com/loft-sh/devpod/releases/latest/download/devpod-linux-amd64"
+    curl -L -o devpod "https://github.com/loft-sh/devpod/releases/latest/download/devpod-linux-amd64"
     sudo install -c -m 0755 devpod /usr/local/bin
     rm devpod
   fi
@@ -128,10 +130,6 @@ echo "========================================"
 echo "🧰 Activating Mise-First Environment"
 echo "========================================"
 
-# Bypass corporate SSL inspection universally for this session
-export MISE_INSECURE_HTTPS=1
-echo "insecure" >~/.curlrc
-
 # --- Install Mise CLI ---
 if ! _has mise && [ ! -f "$HOME/.local/bin/mise.exe" ] && [ ! -f "$HOME/.local/bin/mise" ]; then
   echo "⬇️ Downloading Mise..."
@@ -156,12 +154,9 @@ if ! _has mise && [ ! -f "$HOME/.local/bin/mise.exe" ] && [ ! -f "$HOME/.local/b
     rm -rf /tmp/mise_dl
   else
     # Native Linux / macOS installer
-    curl -k -sS https://mise.run | sh
+    curl -sS https://mise.run | sh
   fi
 fi
-
-# Clean up curlrc so the system stays secure for daily use
-rm -f ~/.curlrc
 
 # --- Inject Mise into the current PATH so we can run it immediately ---
 export PATH="$HOME/.local/bin:$HOME/.local/share/mise/bin:$HOME/.local/share/mise/shims:$PATH"
