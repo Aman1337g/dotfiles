@@ -4,8 +4,8 @@ A production-grade, cross-platform collection of dotfiles and environment config
 
 ## ✨ Features
 * **Mise-First Architecture:** Relegates native package managers (`apt`, `brew`) to basic lifelines, relying entirely on `mise` to dynamically provision exact versions of CLI tools (Neovim, Starship, Eza, FZF, Zoxide, Yazi, Bat, Node.js, Python, Terraform, kubectl, Helm) across every OS via environment-specific `config.toml` files.
-* **Corporate Proxy Immune:** Features a custom Windows-to-Linux interop script (`sync_certs`) that automatically extracts Zscaler Root CAs from the Windows registry and injects them into the WSL trust store to prevent SSL handshake failures.
-* **Zero-Touch & Interactive Bootstrapper:** A single `setup` script orchestrates repository cloning, linking, and tool installation. Run it interactively via a CLI menu, or fully unattended using flags (`--auto`, `--env=container`). A piped-execution guard automatically applies `--auto` when stdin is not a tty (e.g., `curl | bash`).
+* **Corporate Proxy Immune:** Features a custom Windows-to-Linux interop script (`sync_certs`) that automatically extracts Zscaler Root CAs from the Windows registry and injects them into the WSL trust store to prevent SSL handshake failures without disabling TLS verification globally.
+* **Zero-Touch & Interactive Bootstrapper:** A single `setup` script orchestrates repository cloning, linking, and tool installation. Run it interactively via a CLI menu, or fully unattended using flags (`--auto`, `--env=container`). A piped-execution guard automatically applies `--auto` when stdin is not a tty (e.g., `curl | bash`), and both `setup` and `install_tools` run in strict mode to fail fast on bootstrap errors.
 * **The Ultimate Editor:** A fully customized, transparent [LazyVim](https://github.com/LazyVim/LazyVim) setup featuring the Nordic theme, pre-configured for DevOps workflows (Terraform, Python, YAML, JSON).
 * **Smart Environment Detection:** Uses a 3-tier detection system (Flags → Interactive Prompt → Wayland/X11 Heartbeat) to automatically decide whether to stow heavy GUI desktop apps (Kitty, Sway, Qutebrowser, Zathura) or keep the environment headless.
 * **Idempotent Stow Runway:** Safely clears the runway for GNU Stow by detecting existing physical configurations and moving them to timestamped backup directories under `~/.local/state/dotfiles/backups/`, keeping only the 5 most recent runs.
@@ -102,10 +102,29 @@ stow kitty sway qutebrowser
 ```
 
 **3. Install Core Tools & Dependencies**
-Runs the universal installer to grab system lifelines (`curl`, `git`), sync corporate certificates (if on WSL), and trigger `mise` to build the polyglot toolchain.
+Runs the universal installer to grab system lifelines (`curl`, `git`), sync corporate certificates (if on WSL), and trigger `mise` to build the polyglot toolchain. The installer now relies on proper certificate trust instead of any global insecure curl bypass, so bootstrap failures surface immediately if trust is not configured correctly.
 
 ```bash
 ./install_tools
+```
+
+For desktop Linux setups, install the optional GUI packages as part of the same step:
+
+```bash
+./install_tools --gui
+```
+
+**4. Reload Your Shell**
+
+```bash
+source ~/.profile && source ~/.bashrc
+```
+
+After reload:
+
+```bash
+z <dir>   # zoxide directory jump
+yz        # launch Yazi in the current directory
 ```
 
 > **Note on Windows Terminal:**
