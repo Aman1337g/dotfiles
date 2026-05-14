@@ -27,7 +27,7 @@ done
 # 🧠 SMART AUTO-DETECTION & TTY CHECK
 # ==========================================
 DEFAULT_ENV="linux"
-if [ -n "$TERMUX_VERSION" ]; then
+if [ -n "${TERMUX_VERSION:-}" ]; then
   DEFAULT_ENV="termux"
 elif [ -f /.dockerenv ] || [ -f /run/.containerenv ]; then
   DEFAULT_ENV="container"
@@ -96,7 +96,7 @@ echo "🚀 Starting System Bootstrap..."
 echo "========================================"
 
 # --- 📱 Termux Pre-Flight Check ---
-if [ -n "$TERMUX_VERSION" ]; then
+if [ -n "${TERMUX_VERSION:-}" ]; then
   ENV_TYPE="termux"
   if ! command -v git >/dev/null 2>&1; then
     echo "📱 Termux detected without Git. Installing prerequisite..."

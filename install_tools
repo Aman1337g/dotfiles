@@ -50,7 +50,7 @@ if [ "$ENV_TYPE" = "wsl" ]; then
 fi
 
 # --- 0. Android (Termux) ---
-if [ "$ENV_TYPE" = "termux" ] || [ -n "$TERMUX_VERSION" ]; then
+if [ "$ENV_TYPE" = "termux" ] || [ -n "${TERMUX_VERSION:-}" ]; then
   echo "📱 Termux detected. Installing system base..."
   pkg update -y
   pkg install -y "${TERMUX_BASE[@]}"
