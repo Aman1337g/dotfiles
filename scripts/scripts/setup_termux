@@ -1,5 +1,5 @@
 # --- Termux Specific Setup ---
-if [ -n "$TERMUX_VERSION" ]; then
+if [ -n "${TERMUX_VERSION:-}" ]; then
     echo "📱 Termux environment detected!"
     
     # 1. Setup Storage

@@ -161,7 +161,7 @@ yz() {
 # --- Mise Integration (Dynamically manages toolchains) ---
 if command -v mise >/dev/null 2>&1 || [ -f "$HOME/.local/bin/mise.exe" ]; then
   # 1. Precise Environment Detection
-  if [ -n "$TERMUX_VERSION" ]; then
+  if [ -n "${TERMUX_VERSION:-}" ]; then
     export MISE_ENV="termux"
   elif [ -f /.dockerenv ] || [ -f /run/.containerenv ]; then
     export MISE_ENV="container"

@@ -16,7 +16,7 @@ _has() { command -v "$1" >/dev/null 2>&1; }
 # --- 1. OS-Specific Package Cleanup ---
 printf "%b\n" "${YELLOW}📦 Performing package cache cleanup...${RC}"
 
-if [ -n "$TERMUX_VERSION" ]; then
+if [ -n "${TERMUX_VERSION:-}" ]; then
   echo "📱 Cleaning Termux packages..."
   pkg clean
 
@@ -42,7 +42,7 @@ fi
 printf "%b\n" "${YELLOW}🗑️ Cleaning temporary files and logs...${RC}"
 
 # Safely clean temp directories using mtime (modification time)
-if [ -n "$TERMUX_VERSION" ]; then
+if [ -n "${TERMUX_VERSION:-}" ]; then
     # Termux uses a specific temp directory
     find "$PREFIX/tmp" -type f -mtime +5 -delete 2>/dev/null || true
 else
