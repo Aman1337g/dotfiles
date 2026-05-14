@@ -1,0 +1,146 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+REPO_URL="https://github.com/mangowm/mango.git"
+REAL_USER="${SUDO_USER:-${USER:-root}}"
+REAL_HOME="$(getent passwd "$REAL_USER" | cut -d: -f6)"
+SRC_DIR="${REAL_HOME}/src/mango"
+
+log() {
+  printf "\n\033[1;32m==>\033[0m %s\n" "$1"
+}
+
+require_root() {
+  if [[ "${EUID}" -ne 0 ]]; then
+    echo "Run as root, for example:"
+    echo "sudo ./bootstrap-mango.sh"
+    exit 1
+  fi
+}
+
+run_as_user() {
+  if [[ "$REAL_USER" == "root" ]]; then
+    "$@"
+  elif command -v runuser >/dev/null 2>&1; then
+    runuser -u "$REAL_USER" -- "$@"
+  elif command -v sudo >/dev/null 2>&1; then
+    sudo -u "$REAL_USER" "$@"
+  else
+    echo "Need runuser or sudo to execute as $REAL_USER"
+    exit 1
+  fi
+}
+
+write_testing_sources() {
+  log "Configuring Debian Testing repositories"
+
+  mkdir -p /etc/apt/sources.list.d
+
+  # Disable legacy one-line sources to avoid mixing suites.
+  if [[ -f /etc/apt/sources.list ]]; then
+    mv /etc/apt/sources.list /etc/apt/sources.list.disabled-by-mango-bootstrap
+  fi
+
+  # Disable existing Debian deb822 files except our target file.
+  find /etc/apt/sources.list.d -maxdepth 1 -type f -name "*.sources" ! -name "debian-testing.sources" \
+    -exec mv {} {}.disabled-by-mango-bootstrap \;
+
+  cat > /etc/apt/sources.list.d/debian-testing.sources <<'EOF'
+Types: deb
+URIs: https://deb.debian.org/debian
+Suites: testing testing-updates
+Components: main contrib non-free non-free-firmware
+Signed-By: /usr/share/keyrings/debian-archive-keyring.gpg
+
+Types: deb
+URIs: https://security.debian.org/debian-security
+Suites: testing-security
+Components: main contrib non-free non-free-firmware
+Signed-By: /usr/share/keyrings/debian-archive-keyring.gpg
+EOF
+}
+
+apt_update_upgrade() {
+  log "Updating package lists"
+  apt update
+  log "Upgrading system"
+  DEBIAN_FRONTEND=noninteractive apt full-upgrade -y
+}
+
+install_packages() {
+  log "Installing Mango dependencies"
+  DEBIAN_FRONTEND=noninteractive apt install -y \
+    build-essential git meson ninja-build cmake pkg-config \
+    curl wget vim \
+    seatd libseat-dev libsystemd-dev libudev-dev \
+    libwayland-dev wayland-protocols libinput-dev libdrm-dev \
+    libxkbcommon-dev libpixman-1-dev libdisplay-info-dev \
+    libliftoff-dev libpcre2-dev libxcb1-dev libgbm-dev \
+    libegl1-mesa-dev libgles2-mesa-dev mesa-common-dev \
+    xwayland hwdata
+}
+
+configure_seatd() {
+  log "Configuring seatd"
+
+  if command -v systemctl >/dev/null 2>&1; then
+    systemctl enable seatd
+    systemctl restart seatd
+  else
+    echo "systemctl not found; skipping seatd service management"
+  fi
+
+  if getent group seat >/dev/null 2>&1 && [[ -n "$REAL_USER" && "$REAL_USER" != "root" ]]; then
+    usermod -aG seat "$REAL_USER"
+  fi
+}
+
+clone_or_update_repo() {
+  log "Preparing source directory"
+
+  mkdir -p "$(dirname "$SRC_DIR")"
+  chown -R "$REAL_USER":"$REAL_USER" "$(dirname "$SRC_DIR")"
+
+  if [[ ! -d "$SRC_DIR/.git" ]]; then
+    log "Cloning Mango"
+    run_as_user git clone "$REPO_URL" "$SRC_DIR"
+  else
+    log "Updating Mango repository"
+    run_as_user git -C "$SRC_DIR" pull --ff-only
+  fi
+}
+
+build_mango() {
+  log "Building Mango"
+  cd "$SRC_DIR"
+
+  if [[ -d build ]]; then
+    run_as_user meson setup build --reconfigure
+  else
+    run_as_user meson setup build
+  fi
+
+  run_as_user ninja -C build
+
+  log "Installing Mango"
+  ninja -C build install
+}
+
+main() {
+  require_root
+  write_testing_sources
+  apt_update_upgrade
+  install_packages
+  configure_seatd
+  clone_or_update_repo
+  build_mango
+
+  log "Done"
+  echo
+  echo "Reboot recommended before running Mango."
+  echo
+  echo "Launch with:"
+  echo "dbus-run-session mango"
+}
+
+main "$@"
