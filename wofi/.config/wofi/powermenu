@@ -1,0 +1,33 @@
+#!/bin/bash
+
+# Power menu using dmenu-like approach
+options="Shutdown
+Reboot
+Lock
+Suspend
+Logout"
+
+# Use wofi in its simplest form
+choice=$(echo "$options" | wofi --dmenu)
+
+case "$choice" in
+    "Shutdown")
+        systemctl poweroff
+        ;;
+    "Reboot")
+        systemctl reboot
+        ;;
+    "Lock")
+        swaylock -f -c 2e3440
+        ;;
+    "Suspend")
+        systemctl suspend
+        swaylock -f -c 2e3440
+        ;;
+    "Logout")
+        swaymsg exit
+        ;;
+    *)
+        exit 1
+        ;;
+esac

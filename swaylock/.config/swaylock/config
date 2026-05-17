@@ -1,0 +1,34 @@
+# Swaylock configuration for a dimming (caffeine) effect using Nord colors
+
+# Dimensions for the indicator (the ring and text)
+indicator-radius=100
+indicator-thickness=7
+indicator-caps-lock
+
+# Ring colors for various states:
+ring-color=88c0d0ff         # Default ring color (Nord Frost palette)
+ring-clear-color=81a1c1ff   # When input is cleared
+ring-wrong-color=bf616aff   # On wrong password entry
+ring-ver-color=a3be8cff      # On verification
+
+# Text colors (for password prompt and status)
+text-color=d8dee9ff
+text-clear-color=d8dee9ff
+text-wrong-color=d8dee9ff
+text-ver-color=d8dee9ff
+
+# Inside colors: these overlay the background image to create the dimming effect.
+# "3b4252" is a dark shade from the Nord palette. The alpha "cc" (≈80% opacity)
+# makes the overlay semi-transparent.
+inside-color=3b4252cc
+inside-clear-color=3b4252cc
+inside-wrong-color=3b4252cc
+inside-ver-color=3b4252cc
+
+# Separator color is fully transparent.
+separator-color=00000000
+
+# Background image and scaling: the image is displayed behind the overlay.
+image=~/Pictures/nord-backgrounds/455.jpg
+# image=~/Pictures/nord-backgrounds/100.png
+scaling=fill

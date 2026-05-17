@@ -1,0 +1,38 @@
+window {
+    background-color: #2E3440;
+    border: 1px solid #4C566A;
+    border-radius: 4px;
+}
+
+#input {
+    background-color: #3B4252;
+    color: #D8DEE9;
+    border: none;
+    padding: 6px;
+    margin: 6px;
+}
+
+#inner-box {
+    background-color: #2E3440;
+}
+
+#text {
+    color: #D8DEE9;
+}
+
+#text:selected {
+    background-color: #4C566A;
+    color: #ECEFF4;
+}
+
+#entry {
+    padding: 4px;
+}
+
+#entry:selected {
+    background-color: #4C566A;
+}
+
+#img {
+    margin-right: 8px;
+}

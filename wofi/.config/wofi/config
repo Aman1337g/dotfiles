@@ -1,0 +1,13 @@
+# Wofi Configuration
+
+# Core Settings
+width=500
+height=300
+mode=run
+lines=8
+insensitive=true
+
+# Appearance
+allow_images=true
+image_size=40
+padding=4
