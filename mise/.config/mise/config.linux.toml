@@ -2,5 +2,6 @@
 [tools]
 ripgrep = "latest"
 fd = "latest"
-python = "3.12"
+python = "latest"
 delta = "latest"
+fastfetch = "latest"

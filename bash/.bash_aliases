@@ -211,148 +211,130 @@ gbc() {
 }
 
 gtog() {
-  git rev-parse --is-inside-work-tree >/dev/null 2>&1 || {
-    echo "❌ Not a git repo" >&2
-    return 1
-  }
+  local mode="${1:-toggle}"
+  local name="Aman Kumar Gupta"
+  local personal_email="97891757+Aman1337g@users.noreply.github.com"
+  local work_cfg="$HOME/.gitconfig-work"
 
-  local mode current_email personal_email work_email name work_cfg_path include_active origin
-  mode="${1:-toggle}"
-  personal_email="97891757+Aman1337g@users.noreply.github.com"
-  name="Aman Kumar Gupta"
-  work_cfg_path="$HOME/.gitconfig-work"
+  [ -f "$work_cfg" ] || { echo "❌ ~/.gitconfig-work not found." >&2; return 1; }
+  local work_email work_name
+  work_email=$(git config -f "$work_cfg" user.email)
+  work_name=$(git config -f "$work_cfg" user.name 2>/dev/null || echo "$name")
 
-  _gtog_has_work_include() {
-    local p
+  local in_repo=0
+  git rev-parse --is-inside-work-tree >/dev/null 2>&1 && in_repo=1
+
+  # ── helpers ───────────────────────────────────────────────────────────
+  _has_wi() { git config "${1:---local}" --get-all include.path 2>/dev/null | grep -qF "$work_cfg"; }
+  _add_wi() { _has_wi "$1" || git config "${1:---local}" --add include.path "$work_cfg"; }
+  _rm_wi() {
+    local s="${1:---local}" saved
+    saved=$(git config "$s" --get-all include.path 2>/dev/null || true)
+    git config "$s" --unset-all include.path 2>/dev/null || true
     while IFS= read -r p; do
-      [[ "$p" == "$work_cfg_path" ]] && return 0
-    done < <(git config --local --get-all include.path 2>/dev/null || true)
-    return 1
+      [[ -z "$p" || "$p" == "$work_cfg" ]] && continue
+      git config "$s" --add include.path "$p"
+    done <<<"$saved"
   }
-
-  _gtog_enable_work_include() {
-    if ! _gtog_has_work_include; then
-      git config --local --add include.path "$work_cfg_path"
-    fi
-  }
-
-  _gtog_disable_work_include() {
-    local include_paths p
-    include_paths=$(git config --local --get-all include.path 2>/dev/null || true)
-    git config --local --unset-all include.path 2>/dev/null || true
-    while IFS= read -r p; do
-      [[ -z "$p" || "$p" == "$work_cfg_path" ]] && continue
-      git config --local --add include.path "$p"
-    done <<<"$include_paths"
-  }
-
-  _gtog_rewrite_origin() {
-    local target="$1" repo
-    origin=$(git remote get-url origin 2>/dev/null || true)
-    [[ -z "$origin" ]] && return 0
-
-    case "$target" in
-      https)
-        if [[ "$origin" =~ ^git@spgi:spglobal-innersource/(.+)\.git$ ]]; then
-          repo="${BASH_REMATCH[1]}"
-          git remote set-url origin "https://github.com/spglobal-innersource/${repo}.git"
-          echo "🔁 origin switched to HTTPS: $(git remote get-url origin)"
-        elif [[ "$origin" =~ ^git@github.com:spglobal-innersource/(.+)\.git$ ]]; then
-          repo="${BASH_REMATCH[1]}"
-          git remote set-url origin "https://github.com/spglobal-innersource/${repo}.git"
-          echo "🔁 origin switched to HTTPS: $(git remote get-url origin)"
-        fi
-        ;;
-      ssh)
-        if [[ "$origin" =~ ^https://github.com/spglobal-innersource/(.+)\.git$ ]]; then
-          repo="${BASH_REMATCH[1]}"
-          git remote set-url origin "git@github.com:spglobal-innersource/${repo}.git"
-          echo "🔁 origin switched to SSH: $(git remote get-url origin)"
-        elif [[ "$origin" =~ ^git@spgi:spglobal-innersource/(.+)\.git$ ]]; then
-          repo="${BASH_REMATCH[1]}"
-          git remote set-url origin "git@github.com:spglobal-innersource/${repo}.git"
-          echo "🔁 origin switched to SSH: $(git remote get-url origin)"
-        fi
-        ;;
+  _rewrite_origin() {
+    local t="$1" o repo
+    o=$(git remote get-url origin 2>/dev/null) || return 0
+    case "$t:$o" in
+      https:git@spgi:spglobal-innersource/*)
+        repo="${o#git@spgi:spglobal-innersource/}"; repo="${repo%.git}"
+        git remote set-url origin "https://github.com/spglobal-innersource/${repo}.git" ;;
+      https:git@github.com:spglobal-innersource/*)
+        repo="${o#git@github.com:spglobal-innersource/}"; repo="${repo%.git}"
+        git remote set-url origin "https://github.com/spglobal-innersource/${repo}.git" ;;
+      ssh:https://github.com/spglobal-innersource/*)
+        repo="${o#https://github.com/spglobal-innersource/}"; repo="${repo%.git}"
+        git remote set-url origin "git@github.com:spglobal-innersource/${repo}.git" ;;
+      ssh:git@spgi:spglobal-innersource/*)
+        repo="${o#git@spgi:spglobal-innersource/}"; repo="${repo%.git}"
+        git remote set-url origin "git@github.com:spglobal-innersource/${repo}.git" ;;
+      *) return 0 ;;
     esac
+    echo "🔁 origin → $(git remote get-url origin)"
   }
+  _set_work_env() {
+    export GIT_AUTHOR_NAME="$work_name"   GIT_AUTHOR_EMAIL="$work_email" \
+           GIT_COMMITTER_NAME="$work_name" GIT_COMMITTER_EMAIL="$work_email"
+  }
+  _clear_git_env() { unset GIT_AUTHOR_NAME GIT_AUTHOR_EMAIL GIT_COMMITTER_NAME GIT_COMMITTER_EMAIL GIT_SSH_COMMAND; }
 
-  if [ -f "$work_cfg_path" ]; then
-    work_email=$(git config -f "$work_cfg_path" user.email)
-  else
-    echo "❌ Error: ~/.gitconfig-work not found. Cannot determine work email." >&2
-    return 1
-  fi
-
-  current_email=$(git config user.email)
-  if _gtog_has_work_include; then
-    include_active=1
-  else
-    include_active=0
-  fi
-
-  if [ "$mode" = "toggle" ]; then
-    if [ "$include_active" -eq 1 ] || [ "$current_email" = "$work_email" ]; then
+  # ── toggle resolution ─────────────────────────────────────────────────
+  if [[ "$mode" == toggle ]]; then
+    if { [ "$in_repo" -eq 1 ] && _has_wi --local; } || [[ "${GIT_AUTHOR_EMAIL:-}" == "$work_email" ]]; then
       mode="personal"
     else
       mode="work"
     fi
   fi
 
+  # ── dispatch ──────────────────────────────────────────────────────────
   case "$mode" in
   work|w|work-https|wh)
-    echo "🏢 Switching to 💼 WORK profile (HTTPS token mode) for this repository..."
-    # Let ~/.gitconfig-work override global defaults for this repo.
-    git config --local --unset-all user.email 2>/dev/null || true
-    git config --local --unset-all user.name 2>/dev/null || true
-    git config --local --unset-all commit.gpgsign 2>/dev/null || true
-    _gtog_enable_work_include
-
-    # Default to HTTPS token auth for work repos.
-    git config --local --unset core.sshCommand 2>/dev/null || true
-    git config --local credential.useHttpPath true
-    _gtog_rewrite_origin https
-    ;;
-  work-ssh|ws)
-    echo "🏢 Switching to 💼 WORK profile (SSH fallback mode) for this repository..."
-    # Let ~/.gitconfig-work override global defaults for this repo.
-    git config --local --unset-all user.email 2>/dev/null || true
-    git config --local --unset-all user.name 2>/dev/null || true
-    git config --local --unset-all commit.gpgsign 2>/dev/null || true
-    _gtog_enable_work_include
-    git config --local core.sshCommand "ssh -i ~/.ssh/id_work -o IdentitiesOnly=yes"
-    _gtog_rewrite_origin ssh
-    ;;
-  personal|p)
-    echo "🔄 Switching to 👤 PERSONAL profile for this repository..."
-    _gtog_disable_work_include
-    git config --local user.email "$personal_email"
-    git config --local user.name "$name"
-    git config --local --unset-all commit.gpgsign 2>/dev/null || true
-
-    # Remove work-only SSH override when switching back.
-    git config --local --unset core.sshCommand 2>/dev/null || true
-    git config --local --unset credential.useHttpPath 2>/dev/null || true
-    _gtog_rewrite_origin https
-    ;;
-  status|s)
-    echo "👤 Identity: $(git config user.name) <$(git config user.email)>"
-    echo "🔗 origin: $(git remote get-url origin 2>/dev/null || echo 'N/A')"
-    echo "🔐 core.sshCommand: $(git config --local core.sshCommand 2>/dev/null || echo '(global/default)')"
-    if [ "$include_active" -eq 1 ]; then
-      echo "🧩 include.path(work): $work_cfg_path"
+    if [ "$in_repo" -eq 1 ]; then
+      echo "🏢 WORK profile → local repo (HTTPS)..."
+      git config --local --unset-all user.email      2>/dev/null || true
+      git config --local --unset-all user.name       2>/dev/null || true
+      git config --local --unset-all commit.gpgsign  2>/dev/null || true
+      git config --local --unset     core.sshCommand 2>/dev/null || true
+      git config --local credential.useHttpPath true
+      _add_wi --local; _rewrite_origin https
     else
-      echo "🧩 include.path(work): (disabled)"
-    fi
-    return 0
-    ;;
+      echo "🏢 WORK profile → env vars (no git repo)..."
+      _set_work_env
+    fi ;;
+  work-ssh|ws)
+    local ssh_cmd="ssh -i ~/.ssh/id_work -o IdentitiesOnly=yes"
+    if [ "$in_repo" -eq 1 ]; then
+      echo "🏢 WORK profile → local repo (SSH)..."
+      git config --local --unset-all user.email      2>/dev/null || true
+      git config --local --unset-all user.name       2>/dev/null || true
+      git config --local --unset-all commit.gpgsign  2>/dev/null || true
+      git config --local core.sshCommand "$ssh_cmd"
+      _add_wi --local; _rewrite_origin ssh
+    else
+      echo "🏢 WORK profile → env vars (SSH, no git repo)..."
+      _set_work_env; export GIT_SSH_COMMAND="$ssh_cmd"
+    fi ;;
+  work-global|wg)
+    echo "🌐 WORK profile → global config..."
+    _add_wi --global ;;
+  personal|p)
+    echo "👤 PERSONAL profile..."
+    _clear_git_env
+    if [ "$in_repo" -eq 1 ]; then
+      _rm_wi --local
+      git config --local user.email "$personal_email"
+      git config --local user.name  "$name"
+      git config --local --unset-all commit.gpgsign        2>/dev/null || true
+      git config --local --unset     core.sshCommand       2>/dev/null || true
+      git config --local --unset     credential.useHttpPath 2>/dev/null || true
+      _rewrite_origin https
+    fi ;;
+  personal-global|pg)
+    echo "🌐 PERSONAL profile → global (work include removed)..."
+    _rm_wi --global; _clear_git_env ;;
+  status|s)
+    local eff_name="${GIT_AUTHOR_NAME:-$(git config user.name 2>/dev/null)}"
+    local eff_email="${GIT_AUTHOR_EMAIL:-$(git config user.email 2>/dev/null)}"
+    echo "👤 ${eff_name} <${eff_email}>"
+    echo "🔗 origin:              $(git remote get-url origin 2>/dev/null || echo N/A)"
+    echo "🔐 sshCommand:          $(git config --local core.sshCommand 2>/dev/null || echo '(global/default)')"
+    echo "🖥️  GIT_AUTHOR_EMAIL:    ${GIT_AUTHOR_EMAIL:-(unset)}"
+    printf "🧩 local  include(work): %s\n" "$(_has_wi --local  && echo enabled || echo disabled)"
+    printf "🌐 global include(work): %s\n" "$(_has_wi --global && echo enabled || echo disabled)"
+    return 0 ;;
   *)
-    echo "Usage: gtog [work|work-https|work-ssh|personal|toggle|status]"
-    return 1
-    ;;
+    echo "Usage: gtog [work|work-https|work-ssh|work-global|personal|personal-global|toggle|status]"
+    return 1 ;;
   esac
 
-  echo "✅ Identity set: $(git config user.name) <$(git config user.email)>"
+  local eff_name="${GIT_AUTHOR_NAME:-$(git config user.name 2>/dev/null)}"
+  local eff_email="${GIT_AUTHOR_EMAIL:-$(git config user.email 2>/dev/null)}"
+  echo "✅ ${eff_name} <${eff_email}>"
 }
 
 # ==========================================
