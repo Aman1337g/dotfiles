@@ -1,5 +1,16 @@
-./nvim/.config/nvim/lua/chadrc.lua
-*chadrc.lua
-themes/
-icons/
-gcm-diagnose.log
+# NvChad local config
+nvim/.config/nvim/lua/chadrc.lua
+
+# Theme/icon overrides
+**/themes/
+**/icons/
+
+# Git Credential Manager diagnostics
+gcm-diagnose*.log
+
+# SSH secrets and local state
+**/.ssh/id_*
+**/.ssh/agent*
+**/.ssh/known_hosts
+**/.ssh/known_hosts.*
+**/.ssh/allowed*
