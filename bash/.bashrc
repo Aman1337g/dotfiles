@@ -241,24 +241,9 @@ if [[ "$OSTYPE" == msys* || "$OSTYPE" == cygwin* ]]; then
   # Construct a multi-line, colored prompt AND preserve synchronous history
   PROMPT_COMMAND='history -a; __git_ps1 "\[\033[36m\]\u\[\033[0m\]@\[\033[32m\]\h: \[\033[33;1m\]\w" "\[\033[0m\]\n\$ "'
 
-  # --- Zoxide (Lazy Load for Git Bash) ---
+  # --- Zoxide ---
   if command -v zoxide >/dev/null 2>&1; then
-    _zoxide_lazy() {
-      unset -f cd zi _zoxide_lazy
-      eval "$(zoxide init --cmd cd bash)"
-    }
-    cd() {
-      _zoxide_lazy
-      cd "$@"
-    }
-    z() {
-      _zoxide_lazy
-      z "$@"
-    }
-    zi() {
-      _zoxide_lazy
-      zi "$@"
-    }
+    eval "$(zoxide init --cmd cd bash)"
   fi
 
 else
