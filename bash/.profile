@@ -2,6 +2,9 @@
 # ~/.profile - Environment & Paths
 # ==========================================
 
+export AWS_SHARED_CREDENTIALS_FILE="/mnt/c/Users/AMAN.GUPTA7/.aws/credentials"
+export AWS_CONFIG_FILE="/mnt/c/Users/AMAN.GUPTA7/.aws/config"
+
 # --- Idempotent Path Appender ---
 _append_path() {
   case ":$PATH:" in

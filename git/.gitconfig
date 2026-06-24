@@ -86,11 +86,13 @@
 [includeIf "gitdir/i:C:/Users/"]
     path = ~/.gitconfig-work
 
-# 3. Match WSL home-hosted work repositories
-[includeIf "gitdir/i:/home/aman/pvr-devops-devops-gitlab-ci-files/"]
+# Replaces all gitdir/i: directory entries
+[includeIf "hasconfig:remote.*.url:https://github.com/spglobal-innersource/**"]
     path = ~/.gitconfig-work
-
-
+[includeIf "hasconfig:remote.*.url:git@github.com:spglobal-innersource/**"]
+    path = ~/.gitconfig-work
+[includeIf "hasconfig:remote.*.url:git@spgi:spglobal-innersource/**"]
+    path = ~/.gitconfig-work
 
 ; # ~/.gitconfig-work
 ; [user]

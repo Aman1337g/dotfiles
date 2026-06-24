@@ -1,24 +1,28 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Usage: ./emptys3 <bucket-name> [--profile <aws-profile>]
+# Usage: ./emptys3 <bucket-name> [--profile <aws-profile>] [--threads N]
 
 BUCKET=""
 AWS_PROFILE=""
-AWS_ARGS=()
+THREADS=10
 
 usage() {
-  echo "Usage: $0 <bucket-name> [--profile <aws-profile>]"
+  echo "Usage: $0 <bucket-name> [--profile <aws-profile>] [--threads N]"
   echo "  bucket-name   : Name of the S3 bucket to empty"
   echo "  --profile     : (Optional) AWS CLI profile to use"
+  echo "  --threads     : (Optional) Parallel delete threads (default: 10)"
   exit 1
 }
 
-# Parse args
 while [[ $# -gt 0 ]]; do
   case "$1" in
   --profile)
     AWS_PROFILE="$2"
+    shift 2
+    ;;
+  --threads)
+    THREADS="$2"
     shift 2
     ;;
   --help | -h)
@@ -45,9 +49,15 @@ if ! command -v aws >/dev/null 2>&1; then
   echo "ERROR: aws CLI not found. Install it first."
   exit 1
 fi
+
+# Export AWS_PROFILE so xargs worker subprocesses inherit credentials automatically
+[[ -n "$AWS_PROFILE" ]] && export AWS_PROFILE
+
+AWS_ARGS=()
 [[ -n "$AWS_PROFILE" ]] && AWS_ARGS=(--profile "$AWS_PROFILE")
-TMPFILE=$(mktemp /tmp/s3-delete-XXXXXX.json)
-trap 'rm -f "$TMPFILE"' EXIT
+
+CHUNK_DIR=$(mktemp -d /tmp/s3-chunks-XXXXXX)
+trap 'rm -rf "$CHUNK_DIR"' EXIT
 
 # Show caller identity / account info before doing anything
 echo ""
@@ -57,12 +67,13 @@ IDENTITY=$(aws "${AWS_ARGS[@]}" sts get-caller-identity --output json 2>/dev/nul
   exit 1
 }
 ACCOUNT_ID=$(echo "$IDENTITY" | python3 -c "import sys,json; print(json.load(sys.stdin)['Account'])")
-USER_ARN=$(echo "$IDENTITY" | python3 -c "import sys,json; print(json.load(sys.stdin)['Arn'])")
+USER_ARN=$(echo "$IDENTITY"   | python3 -c "import sys,json; print(json.load(sys.stdin)['Arn'])")
 REGION=$(aws "${AWS_ARGS[@]}" configure get region 2>/dev/null || echo "${AWS_DEFAULT_REGION:-us-east-1}")
 echo "  Account ID : $ACCOUNT_ID"
 echo "  Identity   : $USER_ARN"
 echo "  Region     : $REGION"
 echo "  Bucket     : s3://$BUCKET"
+echo "  Threads    : $THREADS"
 echo "--------------------"
 echo ""
 read -rp "Proceed with emptying s3://$BUCKET in account $ACCOUNT_ID? [y/N] " GO
@@ -87,8 +98,7 @@ START_TIME=$(python3 -c "from datetime import datetime, timedelta, timezone; pri
 END_TIME=$(python3 -c "from datetime import datetime, timezone; print(datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ'))")
 
 RAW_SIZE=$(aws "${AWS_ARGS[@]}" cloudwatch get-metric-statistics \
-  --namespace AWS/S3 \
-  --metric-name BucketSizeBytes \
+  --namespace AWS/S3 --metric-name BucketSizeBytes \
   --dimensions Name=BucketName,Value="$BUCKET" Name=StorageType,Value=StandardStorage \
   --start-time "$START_TIME" --end-time "$END_TIME" \
   --period 86400 --statistics Average \
@@ -96,8 +106,7 @@ RAW_SIZE=$(aws "${AWS_ARGS[@]}" cloudwatch get-metric-statistics \
   --output text 2>/dev/null || echo "None")
 
 TOTAL_OBJECTS=$(aws "${AWS_ARGS[@]}" cloudwatch get-metric-statistics \
-  --namespace AWS/S3 \
-  --metric-name NumberOfObjects \
+  --namespace AWS/S3 --metric-name NumberOfObjects \
   --dimensions Name=BucketName,Value="$BUCKET" Name=StorageType,Value=AllStorageTypes \
   --start-time "$START_TIME" --end-time "$END_TIME" \
   --period 86400 --statistics Average \
@@ -127,11 +136,11 @@ echo "  Total Size    : $TOTAL_SIZE  (approx, updated daily)"
 # Versioned object counts (if versioning is active)
 if [[ "$VERSIONING" == "Enabled" || "$VERSIONING" == "Suspended" ]]; then
   VERSION_COUNT=$(aws "${AWS_ARGS[@]}" s3api list-object-versions --bucket "$BUCKET" \
-    --query 'length(Versions[])' --output text 2>/dev/null || echo "0")
+    --max-items 1000 --query 'length(Versions[])' --output text 2>/dev/null || echo "0")
   MARKER_COUNT=$(aws "${AWS_ARGS[@]}" s3api list-object-versions --bucket "$BUCKET" \
-    --query 'length(DeleteMarkers[])' --output text 2>/dev/null || echo "0")
-  echo "  Versions      : ${VERSION_COUNT:-0}  (first page, capped at 1000)"
-  echo "  Delete Markers: ${MARKER_COUNT:-0}  (first page, capped at 1000)"
+    --max-items 1000 --query 'length(DeleteMarkers[])' --output text 2>/dev/null || echo "0")
+  echo "  Versions      : ${VERSION_COUNT:-0}  (first page only, capped at 1000)"
+  echo "  Delete Markers: ${MARKER_COUNT:-0}  (first page only, capped at 1000)"
 fi
 
 echo "-------------------"
@@ -142,66 +151,111 @@ if [[ "${FINAL,,}" != "y" ]]; then
   exit 0
 fi
 
+# ---------------------------------------------------------------------------
+# parallel_delete TYPE KIND
+#   TYPE : display name + subdirectory name (e.g. "versions", "markers")
+#   KIND : JSON key in list-object-versions response: "Versions" or "DeleteMarkers"
+#
+# Phase 1 (serial)   — paginate ALL items via NextToken, write 1000-item chunk files.
+#                      A page may have 0 of a given KIND but still have a NextToken;
+#                      the loop only exits when NextToken is absent (true end of data).
+# Phase 2 (parallel) — delete all chunk files concurrently via xargs -P $THREADS.
+#                      Workers inherit $AWS_PROFILE (exported above) automatically.
+# ---------------------------------------------------------------------------
+parallel_delete() {
+  local TYPE="$1"
+  local KIND="$2"
+  local SUBDIR="$CHUNK_DIR/$TYPE"
+  mkdir -p "$SUBDIR"
+
+  echo "  Phase 1 — listing all $TYPE (paginating)..."
+  local TOKEN="" CHUNK=0 TOTAL=0
+
+  while true; do
+    local TOKEN_ARGS=()
+    [[ -n "$TOKEN" ]] && TOKEN_ARGS=(--starting-token "$TOKEN")
+
+    local RESPONSE
+    RESPONSE=$(aws "${AWS_ARGS[@]}" s3api list-object-versions \
+      --bucket "$BUCKET" --max-items 1000 "${TOKEN_ARGS[@]}" --output json 2>/dev/null)
+
+    # Single python3 call: write chunk file (if items present) and print "count\nnexttoken"
+    # CHUNK increments in bash only when count > 0, so chunk filenames are always dense
+    local META
+    META=$(echo "$RESPONSE" | python3 -c "
+import sys, json
+d = json.load(sys.stdin)
+items = d.get('$KIND') or []
+count = len(items)
+if count:
+    payload = json.dumps({'Objects': [{'Key': v['Key'], 'VersionId': v['VersionId']} for v in items]})
+    with open('$SUBDIR/chunk-$CHUNK.json', 'w') as f:
+        f.write(payload)
+print(count)
+print(d.get('NextToken', ''))
+")
+
+    local COUNT
+    COUNT=$(echo "$META" | head -1)
+    TOKEN=$(echo "$META"  | sed -n '2p')
+
+    if [[ "$COUNT" -gt 0 ]]; then
+      TOTAL=$((TOTAL + COUNT))
+      CHUNK=$((CHUNK + 1))
+    fi
+
+    # Stop only when AWS signals no more pages — not when a page has 0 of this KIND
+    [[ -z "$TOKEN" ]] && break
+  done
+
+  if [[ $CHUNK -eq 0 ]]; then
+    echo "  No $TYPE found."
+    return
+  fi
+
+  echo "  Phase 2 — deleting $TOTAL $TYPE ($CHUNK batch(es)) with $THREADS parallel threads..."
+
+  # xargs -P spawns up to $THREADS workers; AWS_PROFILE env var propagates automatically
+  find "$SUBDIR" -name "chunk-*.json" -print0 | \
+    xargs -0 -P "$THREADS" -I{} \
+      aws s3api delete-objects \
+        --bucket "$BUCKET" --delete "file://{}" \
+        --output json > /dev/null
+
+  echo "  Done — $TOTAL $TYPE deleted."
+}
+
 DELETE_START=$(date +%s)
 
 if [[ "$VERSIONING" == "Enabled" || "$VERSIONING" == "Suspended" ]]; then
-  echo "Bucket has versioning: $VERSIONING"
-
+  echo ""
   echo "Deleting all object versions..."
-  while true; do
-    VERSIONS=$(aws "${AWS_ARGS[@]}" s3api list-object-versions \
-      --bucket "$BUCKET" \
-      --query '{Objects: Versions[].{Key:Key,VersionId:VersionId}}' \
-      --max-items 1000 \
-      --output json 2>/dev/null)
-
-    OBJECTS=$(echo "$VERSIONS" | python3 -c "import sys,json; d=json.load(sys.stdin); print(len(d.get('Objects') or []))")
-    [[ "$OBJECTS" -eq 0 ]] && break
-
-    echo "  Deleting $OBJECTS versions..."
-    echo "$VERSIONS" >"$TMPFILE"
-    DEL_RESULT=$(aws "${AWS_ARGS[@]}" s3api delete-objects --bucket "$BUCKET" --delete "file://$TMPFILE" --output json)
-    DEL_ERRORS=$(echo "$DEL_RESULT" | python3 -c "import sys,json; print(len(json.load(sys.stdin).get('Errors', [])))")
-    [[ "${DEL_ERRORS:-0}" -gt 0 ]] && echo "  WARNING: $DEL_ERRORS versions failed to delete in this batch"
-  done
-
+  parallel_delete "versions" "Versions"
+  echo ""
   echo "Deleting all delete markers..."
-  while true; do
-    MARKERS=$(aws "${AWS_ARGS[@]}" s3api list-object-versions \
-      --bucket "$BUCKET" \
-      --query '{Objects: DeleteMarkers[].{Key:Key,VersionId:VersionId}}' \
-      --max-items 1000 \
-      --output json 2>/dev/null)
-
-    OBJECTS=$(echo "$MARKERS" | python3 -c "import sys,json; d=json.load(sys.stdin); print(len(d.get('Objects') or []))")
-    [[ "$OBJECTS" -eq 0 ]] && break
-
-    echo "  Deleting $OBJECTS delete markers..."
-    echo "$MARKERS" >"$TMPFILE"
-    DEL_RESULT=$(aws "${AWS_ARGS[@]}" s3api delete-objects --bucket "$BUCKET" --delete "file://$TMPFILE" --output json)
-    DEL_ERRORS=$(echo "$DEL_RESULT" | python3 -c "import sys,json; print(len(json.load(sys.stdin).get('Errors', [])))")
-    [[ "${DEL_ERRORS:-0}" -gt 0 ]] && echo "  WARNING: $DEL_ERRORS markers failed to delete in this batch"
-  done
-
+  parallel_delete "markers" "DeleteMarkers"
 else
-  echo "Bucket versioning: not enabled"
-  echo "Deleting all objects..."
+  echo ""
+  echo "Bucket versioning: not enabled — deleting all objects..."
   aws "${AWS_ARGS[@]}" s3 rm "s3://$BUCKET" --recursive
 fi
 
-# Clean up any incomplete multipart uploads
+# Abort incomplete multipart uploads
+echo ""
 echo "Aborting any incomplete multipart uploads..."
-UPLOADS=$(aws "${AWS_ARGS[@]}" s3api list-multipart-uploads --bucket "$BUCKET" --query 'Uploads[].[Key,UploadId]' --output text 2>/dev/null || true)
+UPLOADS=$(aws "${AWS_ARGS[@]}" s3api list-multipart-uploads \
+  --bucket "$BUCKET" --query 'Uploads[].[Key,UploadId]' --output text 2>/dev/null || true)
 if [[ -n "$UPLOADS" ]]; then
   while IFS=$'\t' read -r KEY UPLOAD_ID; do
-    aws "${AWS_ARGS[@]}" s3api abort-multipart-upload --bucket "$BUCKET" --key "$KEY" --upload-id "$UPLOAD_ID"
-    echo "  Aborted upload: $KEY ($UPLOAD_ID)"
+    aws "${AWS_ARGS[@]}" s3api abort-multipart-upload \
+      --bucket "$BUCKET" --key "$KEY" --upload-id "$UPLOAD_ID"
+    echo "  Aborted: $KEY ($UPLOAD_ID)"
   done <<<"$UPLOADS"
 fi
 
 echo ""
 DELETE_END=$(date +%s)
 ELAPSED=$((DELETE_END - DELETE_START))
-ELAPSED_FMT=$(printf '%02dh %02dm %02ds' $((ELAPSED / 3600)) $(((ELAPSED % 3600) / 60)) $((ELAPSED % 60)))
+ELAPSED_FMT=$(printf '%02dh %02dm %02ds' $((ELAPSED/3600)) $(( (ELAPSED%3600)/60 )) $((ELAPSED%60)))
 echo "Done. Bucket s3://$BUCKET is now empty."
 echo "Time taken: $ELAPSED_FMT"
