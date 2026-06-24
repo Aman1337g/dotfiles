@@ -4,7 +4,7 @@
 # Increase only if you see modules prematurely reporting timeouts.
 command_timeout = 500   # ms before a module command is killed
 scan_timeout    = 30    # ms for filesystem scanning per directory
-add_newline     = false
+add_newline     = true
 
 # --- 0. THE GLOBAL LAYOUT ---
 # No manual brackets here! The modules now contain their own containers.

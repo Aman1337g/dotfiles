@@ -1,0 +1,66 @@
+#!/usr/bin/env bash
+
+set -uo pipefail
+
+# Check if jq is installed
+if ! command -v jq &> /dev/null; then
+    echo "❌ Error: 'jq' is not installed. Please install it to use this script."
+    exit 1
+fi
+
+# Check for input file
+if [[ $# -eq 0 ]]; then
+    echo "Usage: $0 <path_to_terraform.tfstate>"
+    exit 1
+fi
+
+STATE_FILE=$1
+
+# 1. Handle invalid/malformed files
+if [[ ! -f "$STATE_FILE" ]]; then
+    echo "❌ Error: File '$STATE_FILE' not found."
+    exit 1
+fi
+
+if ! jq empty "$STATE_FILE" 2>/dev/null; then
+    echo "❌ Error: '$STATE_FILE' is not a valid JSON/Terraform state file."
+    exit 1
+fi
+
+echo "--- Analyzing S3 Buckets in State ---"
+
+# 2. Identify and Count Buckets
+BUCKET_COUNT=$(jq -r '[.resources[] | select(.type == "aws_s3_bucket")] | length' "$STATE_FILE")
+echo "Total S3 buckets found: $BUCKET_COUNT"
+
+if [[ "$BUCKET_COUNT" -eq 0 ]]; then
+    echo "No S3 buckets found in this state file. Nothing to do."
+    exit 0
+fi
+
+# 3. Display ARNs and check force_destroy status
+echo "Current Bucket Details:"
+printf "%-60s | %-15s\n" "Bucket ARN" "Force Destroy"
+echo "--------------------------------------------------------------------------------"
+
+jq -r '.resources[] | select(.type == "aws_s3_bucket") | .instances[] | "\(.attributes.arn) | \(.attributes.force_destroy // "not_set")"' "$STATE_FILE" | while read -r line; do
+    printf "%-60s | %-15s\n" $(echo "$line" | cut -d'|' -f1) $(echo "$line" | cut -d'|' -f2)
+done
+
+# 4. Perform the Modification
+# This logic: finds S3 buckets -> goes into instances -> goes into attributes -> sets/adds force_destroy: true
+TEMP_FILE=$(mktemp)
+jq '(.resources[] | select(.type == "aws_s3_bucket") | .instances[].attributes.force_destroy) = true' "$STATE_FILE" > "$TEMP_FILE"
+
+# 5. Save the file
+OUTPUT_FILE="modified_$(basename "$STATE_FILE")"
+mv "$TEMP_FILE" "$OUTPUT_FILE"
+
+echo "--------------------------------------------------------------------------------"
+echo "✅ Success!"
+echo "Modified state saved to: $OUTPUT_FILE"
+echo ""
+echo "Summary of changes:"
+echo "- All 'aws_s3_bucket' resources now have 'force_destroy' set to true."
+echo "- Total instances updated: $(jq -r '[.resources[] | select(.type == "aws_s3_bucket") | .instances[]] | length' "$OUTPUT_FILE")"
+

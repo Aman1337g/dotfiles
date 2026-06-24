@@ -1,0 +1,59 @@
+#!/usr/bin/env bash
+
+# -u: exit if a variable is unset
+# -o pipefail: catch errors in pipelines
+set -uo pipefail
+
+echo "--- AWS Profile Selection ---"
+read -p "Enter AWS Profile (press [ENTER] for 'default'): " aws_profile
+aws_profile=${aws_profile:-default} # Fallback to 'default' if empty
+
+# Export the profile so all subsequent AWS commands use it automatically
+export AWS_PROFILE=$aws_profile
+
+echo ""
+echo "--- Verifying Identity for Profile: $aws_profile ---"
+if ! aws sts get-caller-identity; then
+  echo "❌ Error: Could not verify identity. Check your profile name and credentials."
+  exit 1
+fi
+echo ""
+
+echo "Enter AWS Secrets Manager Secret ARNs one by one."
+echo "Press [ENTER] on a blank line to stop."
+echo "---------------------------------------------------"
+
+while read -r -p "Secret ARN: " secret_arn; do
+  # Clean the input
+  secret_arn=$(echo "$secret_arn" | xargs)
+
+  # Exit on blank input
+  if [[ -z "$secret_arn" ]]; then
+    break
+  fi
+
+  # Extract the region from the ARN
+  region=$(echo "$secret_arn" | cut -d':' -f4)
+
+  if [[ -z "$region" ]]; then
+    echo "❌ Invalid ARN format. Could not detect region."
+    continue
+  fi
+
+  echo "Detected Region: $region"
+  echo "Attempting to force-delete: $secret_arn"
+
+  # The command will now use the exported AWS_PROFILE and the extracted region
+  if aws secretsmanager delete-secret \
+    --secret-id "$secret_arn" \
+    --force-delete-without-recovery \
+    --region "$region"; then
+    echo "✅ Successfully deleted from $region."
+  else
+    echo "❌ Failed to delete secret (it may already be deleted or permissions are missing)."
+  fi
+
+  echo "---------------------------------------------------"
+done
+
+echo "Cleanup complete."

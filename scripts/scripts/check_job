@@ -1,0 +1,64 @@
+#!/usr/bin/env bash
+
+set -uo pipefail
+
+# --- Configuration ---
+GITLAB_URL="${GITLAB_URL:-https://gitlab.ihsmarkit.com}"
+if [[ -z "${GITLAB_TOKEN:-}" ]]; then
+  echo "❌ Error: GITLAB_TOKEN environment variable is not set."
+  exit 1
+fi
+
+if [[ $# -lt 2 ]]; then
+  echo "Usage: $0 <project_id_or_path> <search_string>"
+  exit 1
+fi
+
+PROJECT_ID=$1
+SEARCH_STRING=$2
+ENCODED_PROJECT_ID=$(echo "$PROJECT_ID" | sed 's#/#%2F#g')
+
+echo "🔎 Searching for jobs containing '$SEARCH_STRING' in project '$PROJECT_ID'..."
+echo "------------------------------------------------------------------"
+
+page=1
+found=false
+
+while true; do
+  # Fetch jobs from the API
+  response=$(curl --silent --header "PRIVATE-TOKEN: $GITLAB_TOKEN" \
+    "$GITLAB_URL/api/v4/projects/$ENCODED_PROJECT_ID/jobs?per_page=100&page=$page")
+
+  # Check for error messages
+  error_message=$(echo "$response" | jq -r 'if type == "object" then .message // empty else empty end')
+  if [[ -n "$error_message" ]]; then
+    echo "❌ Error from GitLab API: $error_message"
+    exit 1
+  fi
+
+  item_count=$(echo "$response" | jq -r 'if type == "array" then length else 0 end')
+  if [[ "$item_count" -eq 0 ]]; then
+    break
+  fi
+
+  # MODIFIED JQ FILTER:
+  # We use 'test' with the 'i' flag for a case-insensitive substring match.
+  # If you want it to be case-SENSITIVE, remove the ,"i" from the test() function.
+  match=$(echo "$response" | jq -r ".[] | select(.name | test(\"$SEARCH_STRING\"; \"i\")) | \"Name: \(.name) | ID: \(.id) | Status: \(.status) | Created: \(.created_at)\"")
+
+  if [[ -n "$match" ]]; then
+    echo -e "\r✅ FOUND matching job(s) on page $page:                                "
+    echo "$match"
+    found=true
+  fi
+
+  echo -ne "Scanning history... (Page $page)\r"
+  page=$((page + 1))
+done
+
+echo -e "\n------------------------------------------------------------------"
+if [ "$found" = true ]; then
+  echo "Search complete: Jobs containing '$SEARCH_STRING' were found."
+else
+  echo "❌ No jobs containing '$SEARCH_STRING' were found in the history."
+fi
