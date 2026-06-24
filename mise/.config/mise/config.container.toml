@@ -1,6 +1,11 @@
-# Heavy DevOps tools only needed when you are inside your DevPod lab
+# ~/.config/mise/config.container.toml  —  DevPod / Docker containers
+# Loaded in addition to config.toml when MISE_ENV=container.
+# neovim is here (not in config.toml) so containers get an editor.
+# The DevOps toolchain is container-specific; not installed locally.
+
 [tools]
+neovim    = "latest"
 terraform = "latest"
-kubectl = "latest"
-helm = "latest"
-awscli = "latest"
+kubectl   = "latest"
+helm      = "latest"
+awscli    = "latest"

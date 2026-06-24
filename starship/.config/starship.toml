@@ -1,5 +1,11 @@
 "$schema" = 'https://starship.rs/config-schema.json'
 
+# Global performance caps — prevents any module from hanging the prompt.
+# Increase only if you see modules prematurely reporting timeouts.
+command_timeout = 500   # ms before a module command is killed
+scan_timeout    = 30    # ms for filesystem scanning per directory
+add_newline     = false
+
 # --- 0. THE GLOBAL LAYOUT ---
 # No manual brackets here! The modules now contain their own containers.
 format = """
@@ -118,7 +124,21 @@ format = '([](nord_blue)[ $symbol( $version) ]($style)[ ](nord_blue))'
 symbol = " "
 style = "bg:nord_blue fg:nord_bg"
 format = '([](nord_blue)[ $symbol( $version) ]($style)[ ](nord_blue))'
+# Narrow detect_files prevents wide glob scanning on every prompt render.
+# Default detect_extensions = ["kt"] scans every directory — override it.
+[kotlin]
+symbol = "󰣿 "
+style = "bg:nord_blue fg:nord_bg"
+format = '([](nord_blue)[ $symbol( $version) ]($style)[ ](nord_blue))'
+detect_files      = ["build.gradle", "build.gradle.kts", "settings.gradle", "pom.xml"]
+detect_extensions = []
 
+[haskell]
+symbol = " "
+style = "bg:nord_blue fg:nord_bg"
+format = '([](nord_blue)[ $symbol( $version) ]($style)[ ](nord_blue))'
+detect_files      = ["stack.yaml", "cabal.project", "*.cabal", "package.yaml"]
+detect_extensions = []
 # --- 5. DEVOPS & TIME ---
 [docker_context]
 symbol = ""

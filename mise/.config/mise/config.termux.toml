@@ -1,0 +1,9 @@
+# ~/.config/mise/config.termux.toml  —  Android (Termux)
+# Loaded in addition to config.toml when MISE_ENV=termux.
+#
+# Termux's pkg manager installs these natively (see TERMUX_BASE in install_tools).
+# Disabling them here prevents mise from attempting parallel installations that
+# may fail on ARM Android or conflict with the pkg-managed versions.
+
+[settings]
+disable_tools = ["eza", "bat", "fzf", "yazi", "neovim"]

@@ -24,8 +24,8 @@ done
 # All user tools (Neovim, Eza, Starship, etc.) are managed
 # by ~/.config/mise/config.toml at the end of the script.
 # ---------------------------------------------------------
-BREW_BASE=(git curl unzip stow)
-APT_BASE=(git curl unzip stow build-essential ca-certificates jq)
+BREW_BASE=(git curl unzip stow fzf zoxide starship)
+APT_BASE=(git curl unzip stow build-essential ca-certificates jq zoxide fzf starship)
 APK_BASE=(git curl unzip stow build-base jq)
 TERMUX_BASE=(git curl wget jq tmux openssh stow)
 WINDOWS_BASE=(dandavison.delta Neovim.Neovim junegunn.fzf eza-community.eza zig.zig)
@@ -34,6 +34,10 @@ WINDOWS_BASE=(dandavison.delta Neovim.Neovim junegunn.fzf eza-community.eza zig.
 APT_GUI=(kitty zathura qutebrowser)
 
 _has() { command -v "$1" >/dev/null 2>&1; }
+
+# Sudo wrapper: runs directly when sudo is absent (rootless containers, Termux).
+# This makes every 'sudo <cmd>' below safe in CI and minimal environments.
+_sudo() { if _has sudo; then sudo "$@"; else "$@"; fi; }
 
 # ==========================================
 # ⚙️ 1. OS-LEVEL PREREQUISITES
@@ -68,8 +72,8 @@ elif _has brew || [ "$ENV_TYPE" = "mac" ]; then
 # --- 2. Debian / Ubuntu / WSL / Container ---
 elif _has apt || [[ "$ENV_TYPE" =~ (linux|wsl|container) ]]; then
   echo "🐧 Debian-based system detected. Installing lifelines via apt..."
-  sudo apt-get update -y
-  sudo apt-get install -y "${APT_BASE[@]}"
+  _sudo apt-get update -y
+  _sudo apt-get install -y "${APT_BASE[@]}"
 
   # Ubuntu calls bat 'batcat', fix for system scripts that expect 'bat'
   mkdir -p ~/.local/bin
@@ -78,17 +82,15 @@ elif _has apt || [[ "$ENV_TYPE" =~ (linux|wsl|container) ]]; then
   # --- Native GUI Applications ---
   if [ "$INSTALL_GUI" = true ]; then
     echo "🖥️  Installing Native GUI Applications..."
-    sudo apt-get install -y "${APT_GUI[@]}"
+    _sudo apt-get install -y "${APT_GUI[@]}"
   fi
 
   # --- 🐳 Docker Native Engine (Skip in Containers/WSL) ---
   if [ "$ENV_TYPE" != "container" ] && [ "$ENV_TYPE" != "wsl" ] && ! _has docker; then
     echo "🐳 Installing native Docker Engine..."
-    curl -fsSL https://get.docker.com -o get-docker.sh
-    # 🚨 Hack: permanently remove the 20-second sleep penalty
-    sed -i 's/sleep 20/sleep 0/' get-docker.sh
-    sudo sh get-docker.sh && rm get-docker.sh
-    sudo usermod -aG docker "$USER"
+    # Pipe directly to sh — never mutate a downloaded script before execution.
+    curl -fsSL https://get.docker.com | _sudo sh
+    _sudo usermod -aG docker "$USER"
     echo "⚠️ Docker installed. (Log out and back in for group permissions to apply)."
   fi
 
@@ -96,14 +98,14 @@ elif _has apt || [[ "$ENV_TYPE" =~ (linux|wsl|container) ]]; then
   if ! _has devpod; then
     echo "🚀 Installing DevPod CLI..."
     curl -L -o devpod "https://github.com/loft-sh/devpod/releases/latest/download/devpod-linux-amd64"
-    sudo install -c -m 0755 devpod /usr/local/bin
+    _sudo install -c -m 0755 devpod /usr/local/bin
     rm devpod
   fi
 
 # --- 3. Alpine Linux ---
 elif _has apk; then
   echo "🏔️ Alpine detected. Using apk..."
-  sudo apk add "${APK_BASE[@]}"
+  _sudo apk add "${APK_BASE[@]}"
 
 # --- 4. Windows Git Bash ---
 elif [[ "$OSTYPE" == "msys" || "$OSTYPE" == "cygwin" ]] || [ "$ENV_TYPE" = "windows" ]; then
@@ -123,7 +125,7 @@ elif [[ "$OSTYPE" == "msys" || "$OSTYPE" == "cygwin" ]] || [ "$ENV_TYPE" = "wind
 fi
 
 # ==========================================
-# 🧰 2. THE MISE POLYGLOT ENGINE
+# 🧰 3. THE MISE POLYGLOT ENGINE
 # ==========================================
 echo ""
 echo "========================================"

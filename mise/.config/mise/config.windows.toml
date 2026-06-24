@@ -1,4 +1,7 @@
-# Only applied on Windows Git Bash / MSYS
+# ~/.config/mise/config.windows.toml  —  Windows Git Bash / MSYS
+# Loaded in addition to config.toml when MISE_ENV=windows.
+# These tools are installed via Winget (see WINDOWS_BASE in install_tools)
+# so mise must not attempt its own parallel installation.
+
 [settings]
-# Delegate these blocked/compiled tools to Winget by disabling them in Mise
-disable_tools = ["neovim", "eza", "fzf", "zig"]
+disable_tools = ["eza", "fzf"]   # Winget: eza-community.eza, junegunn.fzf

@@ -42,7 +42,13 @@ alias ....='cd ../../..'
 alias .....='cd ../../../..'
 alias c='clear'
 alias e='exit'
-alias o='open'
+# Cross-platform open: macOS=open, Linux/WSL=xdg-open, Git Bash=explorer.exe
+case "$OSTYPE" in
+  darwin*)               alias o='open' ;;
+  linux-android*)        alias o='termux-open' ;;
+  msys*|cygwin*)         alias o='explorer.exe' ;;
+  *)                     alias o='xdg-open' ;;
+esac
 md() { mkdir -p "$1" && cd "$1" || return 1; }
 
 # ==========================================
@@ -100,14 +106,14 @@ alias co='git checkout'
 alias ci='git commit -m'
 alias fetch='git fetch'
 alias push='git push origin'
-alias diff='git diff'
+alias gd='git diff'
 alias sw='git switch'
 alias gl='git log --graph --oneline --decorate'
 alias gla='git log --graph --oneline --decorate --all'
 alias lg="git log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit"
 alias lga="git log --graph --all --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit"
 alias lo='git log --oneline'
-alias ll='git log --oneline -n 10'
+alias gll='git log --oneline -n 10'
 alias amend='git commit --amend'
 alias ane='git commit --amend --no-edit'
 alias pcf='git push --force-with-lease'

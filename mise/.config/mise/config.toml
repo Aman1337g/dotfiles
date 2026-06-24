@@ -1,18 +1,29 @@
-# Everyone gets these, no matter the OS
+# ~/.config/mise/config.toml  —  Universal baseline (loaded on every platform)
+#
+# Intentionally absent (installed natively by install_tools, not via shim):
+#   starship   — called on every prompt draw
+#   zoxide     — called on every cd
+#   fastfetch  — single-binary utility, no version switching needed
+#
+# Platform overlays (loaded in addition to this file via MISE_ENV):
+#   config.linux.toml     — Debian / Ubuntu / WSL / Alpine
+#   config.mac.toml       — macOS
+#   config.windows.toml   — Git Bash / MSYS  (disables tools Winget handles)
+#   config.container.toml — DevPod / Docker  (adds DevOps toolchain)
+#   config.termux.toml    — Android / Termux (disables pkg-managed tools)
+
 [tools]
-neovim = "latest"
-starship = "latest"
-fzf = "latest"
-zoxide = "latest"
-eza = "latest"
-bat = "latest"
-yazi = "latest"
-usage = "latest"
-python = "latest"
-topgrade = "latest"
-node = "lts"
-fastfetch = "latest"
-opencode = "latest"
-terraform = "latest"
-git-lfs = "latest"
-aichat = "latest"
+# Shell & file utilities
+fzf      = "latest"
+eza      = "latest"
+bat      = "latest"
+yazi     = "latest"
+usage    = "latest"   # mise shell-completion helper
+
+# Language runtimes
+python   = "latest"
+node     = "lts"
+
+# Developer tools
+git-lfs  = "latest"
+topgrade = "latest"   # universal updater: runs mise upgrade + apt + more

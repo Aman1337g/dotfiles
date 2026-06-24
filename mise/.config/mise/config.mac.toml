@@ -1,0 +1,19 @@
+# ~/.config/mise/config.mac.toml  —  macOS
+# Loaded in addition to config.toml when MISE_ENV=mac.
+# Mirrors config.linux.toml: these could also come from Homebrew,
+# but managing them here keeps the toolchain consistent across platforms.
+
+[tools]
+# Search & diff utilities
+ripgrep   = "latest"
+fd        = "latest"
+delta     = "latest"   # git-delta: syntax-highlighted diff pager
+
+# Editor
+neovim    = "latest"
+
+# AI / LLM CLI
+opencode  = "latest"
+
+# Infrastructure
+terraform = "latest"

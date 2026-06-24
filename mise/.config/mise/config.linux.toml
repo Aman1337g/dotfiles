@@ -1,7 +1,17 @@
-# Only installed on native Linux
+# ~/.config/mise/config.linux.toml  —  Linux / WSL / Alpine
+# Loaded in addition to config.toml when MISE_ENV=linux.
+
 [tools]
-ripgrep = "latest"
-fd = "latest"
-python = "latest"
-delta = "latest"
-fastfetch = "latest"
+# Search & diff utilities
+ripgrep   = "latest"
+fd        = "latest"
+delta     = "latest"   # git-delta: syntax-highlighted diff pager
+
+# Editor
+neovim    = "latest"
+
+# AI / LLM CLI
+opencode  = "latest"
+
+# Infrastructure
+terraform = "latest"

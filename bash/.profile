@@ -2,8 +2,12 @@
 # ~/.profile - Environment & Paths
 # ==========================================
 
-export AWS_SHARED_CREDENTIALS_FILE="/mnt/c/Users/AMAN.GUPTA7/.aws/credentials"
-export AWS_CONFIG_FILE="/mnt/c/Users/AMAN.GUPTA7/.aws/config"
+# AWS credential paths: only set on WSL where the Windows filesystem is mounted.
+# On native Linux / macOS these default to ~/.aws/* which is correct.
+if [[ -r /proc/version && "$(< /proc/version)" == *[Mm]icrosoft* ]]; then
+  export AWS_SHARED_CREDENTIALS_FILE="/mnt/c/Users/AMAN.GUPTA7/.aws/credentials"
+  export AWS_CONFIG_FILE="/mnt/c/Users/AMAN.GUPTA7/.aws/config"
+fi
 
 # --- Idempotent Path Appender ---
 _append_path() {

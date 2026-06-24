@@ -6,8 +6,11 @@ fi
 
 # ── Startup profiler (set BASH_PROFILE=1 in env to enable) ──────────────────
 # BASH_PROFILE=1 bash -i -c exit
-_S0=$(date +%s%3N)
-_S_LAST=$_S0
+# Guard: only fork `date` when actually profiling, not on every startup
+[[ -n "$BASH_PROFILE" ]] && {
+  _S0=$(date +%s%3N)
+  _S_LAST=$_S0
+}
 _bench() {
   if [[ -n "$BASH_PROFILE" ]]; then
     local now delta total
@@ -25,6 +28,26 @@ _bench() {
 
 # CI/CD Guard: Exit immediately if not running interactively
 [[ $- != *i* ]] && return
+
+# --- Yazi Integration (POSIX safe mktemp wrapper) ---
+z() {
+  local tmp cwd
+  tmp="$(mktemp -t yazi-cwd.XXXXXX)" || return 1
+  yazi "$@" --cwd-file="$tmp"
+  if cwd="$(cat -- "$tmp")" && [ -n "$cwd" ] && [ "$cwd" != "$PWD" ]; then
+    cd -- "$cwd" || return 1
+  fi
+  rm -f -- "$tmp"
+}
+
+# ── Container/CI Minimalist Mode ────────────────────────────────────────────
+# Set CONTAINER_ENV=1 in CI or lightweight containers for instant startup:
+# skips all styling, prompt engines, and non-essential aliases.
+if [[ -n "${CONTAINER_ENV:-}" ]]; then
+  [[ -f "$HOME/.bash_aliases" ]] && . "$HOME/.bash_aliases"
+  export PS1='\u@\h:\w\$ '
+  return
+fi
 
 # Source global definitions
 [ -f /etc/bashrc ] && . /etc/bashrc
@@ -97,7 +120,7 @@ _bench "ssh-agent"
 # --- NVM Lazy Load (Git Bash Safe) ---
 detect_nvm() {
   for nvm_candidate in "$HOME/.nvm" "${XDG_CONFIG_HOME:-$HOME/.config}/nvm"; do
-    [ -d "$nvm_candidate" ] && { 
+    [ -d "$nvm_candidate" ] && {
       export NVM_DIR="$nvm_candidate"
       return 0
     }
@@ -115,7 +138,7 @@ nvm_init() {
 if detect_nvm; then
   # 2. nvm is a shell function, so we drop 'command' here
   alias nvm='nvm_init; nvm'
-  
+
   # node, npm, and npx are real binaries, so 'command' is perfect
   alias node='nvm_init; command node'
   alias npm='nvm_init; command npm'
@@ -147,17 +170,6 @@ if command -v fzf >/dev/null 2>&1; then
   fi
 fi
 
-# --- Yazi Integration (POSIX safe mktemp wrapper) ---
-yz() {
-  local tmp cwd
-  tmp="$(mktemp -t yazi-cwd.XXXXXX)" || return 1
-  yazi "$@" --cwd-file="$tmp"
-  if cwd="$(cat -- "$tmp")" && [ -n "$cwd" ] && [ "$cwd" != "$PWD" ]; then
-    cd -- "$cwd" || return 1
-  fi
-  rm -f -- "$tmp"
-}
-
 # --- Mise Integration (Dynamically manages toolchains) ---
 if command -v mise >/dev/null 2>&1 || [ -f "$HOME/.local/bin/mise.exe" ]; then
   # 1. Precise Environment Detection
@@ -165,7 +177,7 @@ if command -v mise >/dev/null 2>&1 || [ -f "$HOME/.local/bin/mise.exe" ]; then
     export MISE_ENV="termux"
   elif [ -f /.dockerenv ] || [ -f /run/.containerenv ]; then
     export MISE_ENV="container"
-  elif grep -qi microsoft /proc/version 2>/dev/null; then
+  elif [[ -r /proc/version && "$(</proc/version)" == *[Mm]icrosoft* ]]; then
     export MISE_ENV="linux" # Treat WSL exactly like native Linux
   elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
     export MISE_ENV="linux"
@@ -191,7 +203,10 @@ if command -v mise >/dev/null 2>&1 || [ -f "$HOME/.local/bin/mise.exe" ]; then
       eval "$(command mise activate bash)"
     }
     alias mise='_mise_lazy_activate; command mise'
-    cd() { _mise_lazy_activate; builtin cd "$@"; }
+    cd() {
+      _mise_lazy_activate
+      builtin cd "$@"
+    }
   fi
 fi
 _bench "mise activate"
@@ -209,16 +224,16 @@ _bench "bash_aliases"
 # Detect Windows (Git Bash / MSYS / Cygwin)
 if [[ "$OSTYPE" == msys* || "$OSTYPE" == cygwin* ]]; then
   # 🪟 WINDOWS: ultra-fast native prompt (Git-Aware)
-  
+
   # Ensure the native Git prompt script is loaded
   if [ -f /etc/profile.d/git-prompt.sh ]; then
     . /etc/profile.d/git-prompt.sh
   fi
 
   # Configure the native Git prompt indicators
-  export GIT_PS1_SHOWDIRTYSTATE=1       # Shows '*' for unstaged, '+' for staged changes
-  export GIT_PS1_SHOWUNTRACKEDFILES=1   # Shows '%' for untracked files
-  export GIT_PS1_SHOWUPSTREAM="auto"    # Shows '<', '>', or '=' relative to remote
+  export GIT_PS1_SHOWDIRTYSTATE=1     # Shows '*' for unstaged, '+' for staged changes
+  export GIT_PS1_SHOWUNTRACKEDFILES=1 # Shows '%' for untracked files
+  export GIT_PS1_SHOWUPSTREAM="auto"  # Shows '<', '>', or '=' relative to remote
 
   # Construct a multi-line, colored prompt
   # Line 1: user@host: ~/current/dir (branch *%)
@@ -232,26 +247,68 @@ if [[ "$OSTYPE" == msys* || "$OSTYPE" == cygwin* ]]; then
       unset -f cd zi _zoxide_lazy
       eval "$(zoxide init --cmd cd bash)"
     }
-    cd() { _zoxide_lazy; cd "$@"; }
-    z()  { _zoxide_lazy; z "$@"; }
-    zi() { _zoxide_lazy; zi "$@"; }
+    cd() {
+      _zoxide_lazy
+      cd "$@"
+    }
+    z() {
+      _zoxide_lazy
+      z "$@"
+    }
+    zi() {
+      _zoxide_lazy
+      zi "$@"
+    }
   fi
 
 else
   # 🐧 LINUX / WSL / MAC / TERMUX / CONTAINERS
 
-  # --- Starship (cached init — regenerates only when binary changes) ---
+  # --- Starship (fully deferred — zero startup AND zero first-prompt overhead) ---
+  # Each mise shim invocation costs ~300ms on WSL. The init script triggers two:
+  #   1. `starship --version`    → replaced with real-binary mtime check (pure syscall)
+  #   2. `starship session-key`  → replaced with $BASHPID+$RANDOM   (bash builtin)
+  # Cache is regenerated only when the real binary (not the shim) is newer.
   if command -v starship >/dev/null 2>&1; then
     export STARSHIP_CONFIG="$HOME/.config/starship.toml"
-    _starship_cache="$HOME/.cache/starship-init.bash"
-    _starship_bin="$(command -v starship)"
-    # Regenerate cache if missing or older than the starship binary itself
-    if [ ! -f "$_starship_cache" ] || [ "$_starship_bin" -nt "$_starship_cache" ]; then
-      mkdir -p "$HOME/.cache"
-      starship init bash >| "$_starship_cache"
-    fi
-    source "$_starship_cache"
-    unset _starship_cache _starship_bin
+    _starship_deferred_init() {
+      PROMPT_COMMAND="${PROMPT_COMMAND//_starship_deferred_init;/}"
+      PROMPT_COMMAND="${PROMPT_COMMAND//_starship_deferred_init/}"
+      unset -f _starship_deferred_init
+
+      local _cache="$HOME/.cache/starship-init.bash"
+
+      # Walk mise's installs dir to find the real binary (not the shim).
+      # Glob + bash -nt operator = pure kernel stat calls, no subprocess at all.
+      local _real_bin="" _f _inst_dir="$HOME/.local/share/mise/installs/starship"
+      if [[ -d "$_inst_dir" ]]; then
+        for _f in "$_inst_dir"/*/bin/starship; do
+          [[ -x "$_f" ]] || continue
+          [[ -z "$_real_bin" || "$_f" -nt "$_real_bin" ]] && _real_bin="$_f"
+        done
+      fi
+      [[ -z "$_real_bin" ]] && _real_bin=$(command -v starship)
+
+      # Regenerate only when cache is absent or starship was upgraded.
+      if [[ ! -f "$_cache" ]] || [[ "$_real_bin" -nt "$_cache" ]]; then
+        mkdir -p "$HOME/.cache"
+        starship init bash >"$_cache"
+        # Patch: make the session-key call conditional so our pre-set value wins,
+        # skipping the shim entirely.
+        sed -i 's|^STARSHIP_SESSION_KEY=.*|STARSHIP_SESSION_KEY="${STARSHIP_SESSION_KEY:-$(starship session-key)}"|' "$_cache"
+      fi
+
+      # One-time in-place patch for any existing un-patched cache (< 1ms).
+      grep -q 'STARSHIP_SESSION_KEY:-' "$_cache" 2>/dev/null ||
+        sed -i 's|^STARSHIP_SESSION_KEY=.*|STARSHIP_SESSION_KEY="${STARSHIP_SESSION_KEY:-$(starship session-key)}"|' "$_cache"
+
+      # Session key via bash builtins — no shim, no fork.
+      # $BASHPID (unique per shell) + $RANDOM gives per-session uniqueness.
+      export STARSHIP_SESSION_KEY="${BASHPID}${RANDOM}${RANDOM}${RANDOM}"
+      source "$_cache"
+      declare -f starship_precmd >/dev/null 2>&1 && starship_precmd
+    }
+    PROMPT_COMMAND="_starship_deferred_init;${PROMPT_COMMAND:+$PROMPT_COMMAND}"
   fi
   _bench "starship init"
 
@@ -261,7 +318,7 @@ else
     _zoxide_bin="$(command -v zoxide)"
     if [ ! -f "$_zoxide_cache" ] || [ "$_zoxide_bin" -nt "$_zoxide_cache" ]; then
       mkdir -p "$HOME/.cache"
-      zoxide init --cmd cd bash >| "$_zoxide_cache"
+      zoxide init --cmd cd bash >|"$_zoxide_cache"
     fi
     source "$_zoxide_cache"
     bind -x '"\C-f": cdi' 2>/dev/null
@@ -270,7 +327,8 @@ else
   _bench "zoxide init"
 fi
 
-unset -f _bench _S0 _S_LAST 2>/dev/null; unset _S0 _S_LAST 2>/dev/null
+unset -f _bench 2>/dev/null
+unset _S0 _S_LAST 2>/dev/null
 
 if [ -f "$HOME/.local/bin/env" ]; then
   . "$HOME/.local/bin/env"
