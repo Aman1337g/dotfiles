@@ -78,6 +78,35 @@ Signed-By: /usr/share/keyrings/debian-archive-keyring.gpg
 EOF
 }
 
+# bookworm -> testing skips a release: nothing in testing Replaces bookworm's libcurl3-gnutls, so dpkg
+# refuses to unpack libcurl4-gnutls over its files and full-upgrade fails. Remove it first, remember what
+# apt removes with it (e.g. git), and reinstall those from testing after the upgrade.
+_DEBIAN_REMOVED_RDEPS=()
+_debian_drop_obsolete_libcurl() {
+  _is_debian || return 0
+  dpkg-query -W -f='${Status}' libcurl3-gnutls 2>/dev/null | grep -q 'install ok installed' || return 0
+
+  mapfile -t _DEBIAN_REMOVED_RDEPS < <(apt-get remove -s libcurl3-gnutls | awk '/^Remv /{print $2}' | grep -vx 'libcurl3-gnutls')
+  echo "📦 Removing obsolete libcurl3-gnutls (and ${#_DEBIAN_REMOVED_RDEPS[@]} dependent package(s)) before the testing upgrade..."
+  _sudo env DEBIAN_FRONTEND=noninteractive apt-get remove -y libcurl3-gnutls
+}
+
+_debian_restore_removed_rdeps() {
+  [ "${#_DEBIAN_REMOVED_RDEPS[@]}" -gt 0 ] || return 0
+  local pkg cand keep=()
+  for pkg in "${_DEBIAN_REMOVED_RDEPS[@]}"; do
+    cand="$(apt-cache policy "$pkg" 2>/dev/null | awk '/Candidate:/{print $2}')"
+    if [ -n "$cand" ] && [ "$cand" != "(none)" ]; then
+      keep+=("$pkg")
+    else
+      echo "⚠️  $pkg has no candidate in testing; not reinstalling."
+    fi
+  done
+  [ "${#keep[@]}" -gt 0 ] || return 0
+  echo "📦 Reinstalling packages removed with libcurl3-gnutls: ${keep[*]}"
+  _sudo env DEBIAN_FRONTEND=noninteractive apt-get install -y "${keep[@]}"
+}
+
 # ==========================================
 # ⚙️ 1. OS-LEVEL PREREQUISITES
 # ==========================================
@@ -141,13 +170,13 @@ apt)
   _debian_use_testing_sources
   _sudo apt-get update -y
 
-  # Jumping stable -> testing mixes in transitional package renames (e.g.
-  # libcurl3-gnutls -> libcurl4-gnutls) that a targeted `apt-get install` can't
-  # resolve alone — dpkg errors trying to overwrite a file the old package still
-  # owns. full-upgrade first, matching mangowc_bootstrapper's apt_update_upgrade().
+  # Jumping stable -> testing needs full-upgrade first (a targeted `apt-get install` can't
+  # resolve the transitional renames), after clearing the one package full-upgrade can't replace.
   if _is_debian; then
+    _debian_drop_obsolete_libcurl
     _sudo env DEBIAN_FRONTEND=noninteractive apt-get full-upgrade -y \
       -o Dpkg::Options::=--force-confdef -o Dpkg::Options::=--force-confold
+    _debian_restore_removed_rdeps
   fi
 
   mapfile -t APT_BASE < <(_read_manifest packages.apt)
