@@ -68,6 +68,9 @@ run_step "shellcheck" "$LOG_DIR/shellcheck.log" \
 run_step "detect-fixtures" "$LOG_DIR/detect-fixtures.log" bash "$SCRIPT_DIR/detect-fixtures.sh"
 
 # --- Per-distro bootstrap dry-run, twice (idempotency), then verify tools resolved ---
+# Each image's default shell may be sh/dash (lacks process substitution, arrays, etc.), so
+# every per-distro run below explicitly invokes bash via `bash -c` — mirrors ci.yml's
+# `defaults: run: shell: bash` pin on the bootstrap-dry-run job.
 # shellcheck disable=SC2016
 INNER_SCRIPT='
 set -eo pipefail
@@ -78,6 +81,25 @@ if [ -f /host-ca.crt ] && [ -d /etc/ca-certificates/trust-source/anchors ]; then
 fi
 echo "--- prerequisites ---"
 eval "$LOCAL_MATRIX_PREREQS" 2>&1 | tail -n 15
+
+echo "--- validate GUI manifest package names (no install) ---"
+case "$LOCAL_MATRIX_PKG_MGR" in
+apt)
+  mapfile -t pkgs < <(grep -vE "^[[:space:]]*(#|$)" "/src/packages/gui.$LOCAL_MATRIX_PKG_MGR")
+  apt-get install --simulate -y "${pkgs[@]}" >/dev/null
+  ;;
+dnf)
+  while IFS= read -r pkg; do
+    [ -z "$pkg" ] && continue
+    dnf repoquery --qf "%{name}" "$pkg" >/dev/null
+  done < <(grep -vE "^[[:space:]]*(#|$)" "/src/packages/gui.$LOCAL_MATRIX_PKG_MGR")
+  ;;
+pacman)
+  mapfile -t pkgs < <(grep -vE "^[[:space:]]*(#|$)" "/src/packages/gui.$LOCAL_MATRIX_PKG_MGR")
+  pacman -Sp "${pkgs[@]}" >/dev/null
+  ;;
+esac
+
 rm -rf /root/.dotfiles
 cp -a /src /root/.dotfiles
 cd /root/.dotfiles
@@ -96,17 +118,20 @@ done < /src/tests/verify-tools.txt
 exit "$fail"
 '
 
+# name|image|pkg_mgr|prereqs — pkg_mgr matches CI's matrix.pkg_mgr and the packages/gui.<pkg_mgr> filename.
 DISTROS=(
-  "debian-12|debian:12|apt-get update -y && DEBIAN_FRONTEND=noninteractive apt-get install -y git curl ca-certificates"
-  "ubuntu-24.04|ubuntu:24.04|apt-get update -y && DEBIAN_FRONTEND=noninteractive apt-get install -y git curl ca-certificates"
-  "fedora-40|fedora:40|dnf install -y git curl"
-  "archlinux-latest|archlinux:latest|pacman -Syu --noconfirm git curl"
+  "debian-12|debian:12|apt|apt-get update -y && DEBIAN_FRONTEND=noninteractive apt-get install -y git curl ca-certificates"
+  "ubuntu-24.04|ubuntu:24.04|apt|apt-get update -y && DEBIAN_FRONTEND=noninteractive apt-get install -y git curl ca-certificates"
+  "fedora-40|fedora:40|dnf|dnf install -y git curl"
+  "archlinux-latest|archlinux:latest|pacman|pacman -Syu --noconfirm git curl"
 )
 
 for spec in "${DISTROS[@]}"; do
   name="${spec%%|*}"
   rest="${spec#*|}"
   image="${rest%%|*}"
+  rest="${rest#*|}"
+  pkg_mgr="${rest%%|*}"
   prereqs="${rest#*|}"
 
   run_step "$name" "$LOG_DIR/$name.log" \
@@ -114,6 +139,7 @@ for spec in "${DISTROS[@]}"; do
     -e HOME=/root \
     -e GITHUB_TOKEN="$GH_TOKEN" \
     -e LOCAL_MATRIX_PREREQS="$prereqs" \
+    -e LOCAL_MATRIX_PKG_MGR="$pkg_mgr" \
     "${CA_ARGS[@]}" \
     -v "${REPO_ROOT}:/src:ro${MOUNT_SUFFIX}" \
     "$image" bash -c "$INNER_SCRIPT"

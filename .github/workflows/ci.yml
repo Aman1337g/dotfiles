@@ -46,6 +46,8 @@ jobs:
             pkg_mgr: pacman
             install_prereqs: "pacman -Syu --noconfirm git curl"
     runs-on: ubuntu-latest
+    # Container job steps default to `sh`, which is dash on Debian/Ubuntu — dash lacks
+    # process substitution (`<(...)`), arrays, and other bash-isms these scripts rely on.
     defaults:
       run:
         shell: bash
