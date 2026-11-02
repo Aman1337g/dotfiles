@@ -275,8 +275,14 @@ if _has mise || [ -f "$HOME/.local/bin/mise.exe" ] || [ -f "$HOME/.local/bin/mis
     export MISE_ENV="$ENV_TYPE"
   fi
 
-  # Run the installation
-  mise install -y
+  # Run the installation. A single tool's transient failure (e.g. an unauthenticated
+  # curl | bash run hitting GitHub's API rate limit on a release download) must not
+  # abort the whole script before reshim runs for everything that DID install.
+  if ! mise install -y; then
+    echo "⚠️  One or more mise tools failed to install (see above) — continuing so the"
+    echo "    rest still get shimmed. Re-run 'mise install -y' later to retry; if it's"
+    echo "    a GitHub rate limit (HTTP 403), set GITHUB_TOKEN first."
+  fi
 
   # Ensure shims (executables) are generated and linked
   mise reshim
