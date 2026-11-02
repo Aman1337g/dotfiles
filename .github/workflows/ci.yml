@@ -112,4 +112,6 @@ jobs:
           MISE_ENV: container
         run: |
           export PATH="$HOME/.local/bin:$HOME/.local/share/mise/bin:$HOME/.local/share/mise/shims:$PATH"
+          # fastfetch resolves its config from the passwd home (/root), not $HOME (/github/home in container jobs).
+          export XDG_CONFIG_HOME="$HOME/.config"
           fastfetch
