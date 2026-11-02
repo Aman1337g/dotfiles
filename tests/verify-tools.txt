@@ -1,0 +1,11 @@
+# Tools that must resolve on PATH after `setup --auto --env=container` completes.
+# Shared by .github/workflows/ci.yml and tests/local-matrix.sh — edit once, both pick it up.
+stow
+zoxide
+fzf
+starship
+mise
+node
+nvim
+bat
+eza
