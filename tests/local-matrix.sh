@@ -115,7 +115,7 @@ while IFS= read -r t; do
   case "$t" in "#"*) continue ;; esac
   command -v "$t" >/dev/null 2>&1 || { echo "MISSING TOOL: $t"; fail=1; }
 done < /src/tests/verify-tools.txt
-[ "$fail" -eq 0 ] && fastfetch
+[ "$fail" -eq 0 ] && MISE_ENV=container fastfetch
 exit "$fail"
 '
 

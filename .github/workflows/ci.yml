@@ -107,6 +107,9 @@ jobs:
           done < tests/verify-tools.txt
 
       - name: System info (fastfetch)
+        env:
+          # install_tools exports MISE_ENV only for its own process; without it mise ignores the container overlay that pins fastfetch.
+          MISE_ENV: container
         run: |
           export PATH="$HOME/.local/bin:$HOME/.local/share/mise/bin:$HOME/.local/share/mise/shims:$PATH"
           fastfetch
