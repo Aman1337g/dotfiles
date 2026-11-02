@@ -10,3 +10,4 @@ nvim
 bat
 eza
 fastfetch
+fc-cache

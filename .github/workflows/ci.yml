@@ -106,6 +106,13 @@ jobs:
             command -v "$t" >/dev/null 2>&1 || { echo "::error::$t not found on PATH after bootstrap"; exit 1; }
           done < tests/verify-tools.txt
 
+      - name: Verify Nerd Font installed
+        run: |
+          # Container jobs set HOME=/github/home but tools may resolve the passwd home (/root); be explicit.
+          export XDG_DATA_HOME="$HOME/.local/share"
+          fams=$(fc-list : family)
+          grep -qi 'JetBrainsMono Nerd Font' <<<"$fams" || { echo "::error::JetBrainsMono Nerd Font not found by fontconfig"; exit 1; }
+
       - name: System info (fastfetch)
         env:
           # install_tools exports MISE_ENV only for its own process; without it mise ignores the container overlay that pins fastfetch.

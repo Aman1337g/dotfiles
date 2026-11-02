@@ -235,6 +235,30 @@ if [ "$AUTO_MODE" = true ]; then INSTALL_ARGS+=("--auto"); fi
 
 ./install_tools "${INSTALL_ARGS[@]}"
 
+# ==========================================
+# 🔤 6. FONTS
+# ==========================================
+# Nerd Font glyphs are needed by fastfetch/starship/nvim in every env, not only GUI.
+# Runs after install_tools so stow is guaranteed to exist (the first bootstrap may have used `link`).
+if [[ "$ENV_TYPE" =~ ^(linux|wsl|container)$ ]]; then
+  echo ""
+  echo "🔤 Installing Nerd Fonts..."
+  if command -v stow >/dev/null 2>&1; then
+    mkdir -p "$HOME/.local/share"
+    if ! stow --dir="$DOTFILES_DIR" --target="$HOME" fonts; then
+      echo "⚠️ Could not stow fonts (conflicting files in ~/.local/share/fonts?); skipping."
+    fi
+  else
+    echo "⚠️ stow not available; skipping fonts."
+  fi
+
+  if command -v fc-cache >/dev/null 2>&1; then
+    fc-cache -f "$HOME/.local/share/fonts"
+  else
+    echo "⚠️ fc-cache not found (install fontconfig); font cache not refreshed."
+  fi
+fi
+
 echo "========================================"
 echo "✨ Bootstrap Complete! Restart your terminal to see the magic."
 echo "========================================"
