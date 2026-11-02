@@ -70,8 +70,14 @@ run_step "detect-fixtures" "$LOG_DIR/detect-fixtures.log" bash "$SCRIPT_DIR/dete
 # --- Per-distro bootstrap dry-run, twice (idempotency), then verify tools resolved ---
 # shellcheck disable=SC2016
 INNER_SCRIPT='
-set -e
-eval "$LOCAL_MATRIX_PREREQS" >/dev/null 2>&1
+set -eo pipefail
+# pacman (libalpm) ignores CURL_CA_BUNDLE/SSL_CERT_FILE, so install the host bundle into the system trust store.
+if [ -f /host-ca.crt ] && [ -d /etc/ca-certificates/trust-source/anchors ]; then
+  cp /host-ca.crt /etc/ca-certificates/trust-source/anchors/host-ca.crt
+  update-ca-trust
+fi
+echo "--- prerequisites ---"
+eval "$LOCAL_MATRIX_PREREQS" 2>&1 | tail -n 15
 rm -rf /root/.dotfiles
 cp -a /src /root/.dotfiles
 cd /root/.dotfiles
