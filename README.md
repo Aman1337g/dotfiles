@@ -95,6 +95,8 @@ It will securely download the setup engine, automatically clone the repo to `~/.
 curl -sL https://raw.githubusercontent.com/Aman1337g/dotfiles/main/setup | bash
 ```
 
+> **No `curl` on this machine?** You can't fetch-and-run `setup` this way without it — but `git` links `libcurl` internally, so it doesn't need the `curl` binary at all. If you have `git` (or can install it), use [Option 2](#option-2-manual-installation) below instead: `git clone` the repo and run `./setup` locally. `setup` itself installs `curl` (and `git`, if that's missing too) before anything that needs them runs. If you have neither `curl` nor `git`, install one of them manually first (`sudo apt-get install -y git`, or use `wget -qO- <url> | bash` if `wget` is present) — there's no way around needing at least one of the three to get started.
+
 **Automated / CI Mode:**
 
 To bypass the interactive GUI prompts (perfect for DevPod `postCreateCommand` hooks), pass the automation flags directly to the piped script:
