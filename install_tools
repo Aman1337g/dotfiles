@@ -46,12 +46,15 @@ _read_manifest() {
   grep -vE '^[[:space:]]*(#|$)' "$file"
 }
 
+_is_debian() {
+  [ -r /etc/os-release ] && grep -q '^ID=debian$' /etc/os-release
+}
+
 # Debian only (not Ubuntu or other apt derivatives) — points apt at Debian testing.
 # Mirrors scripts/scripts/mangowc_bootstrapper's write_testing_sources(). Idempotent:
 # skips if debian-testing.sources already exists.
 _debian_use_testing_sources() {
-  [ -r /etc/os-release ] || return 0
-  grep -q '^ID=debian$' /etc/os-release || return 0
+  _is_debian || return 0
   [ -f /etc/apt/sources.list.d/debian-testing.sources ] && return 0
 
   echo "📦 Switching Debian apt sources to testing..."
@@ -137,6 +140,16 @@ apt)
   echo "🐧 Debian-based system detected. Installing lifelines via apt..."
   _debian_use_testing_sources
   _sudo apt-get update -y
+
+  # Jumping stable -> testing mixes in transitional package renames (e.g.
+  # libcurl3-gnutls -> libcurl4-gnutls) that a targeted `apt-get install` can't
+  # resolve alone — dpkg errors trying to overwrite a file the old package still
+  # owns. full-upgrade first, matching mangowc_bootstrapper's apt_update_upgrade().
+  if _is_debian; then
+    _sudo env DEBIAN_FRONTEND=noninteractive apt-get full-upgrade -y \
+      -o Dpkg::Options::=--force-confdef -o Dpkg::Options::=--force-confold
+  fi
+
   mapfile -t APT_BASE < <(_read_manifest packages.apt)
   _sudo apt-get install -y "${APT_BASE[@]}"
 
