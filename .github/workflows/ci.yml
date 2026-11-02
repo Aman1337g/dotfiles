@@ -105,3 +105,8 @@ jobs:
             case "$t" in '#'*) continue ;; esac
             command -v "$t" >/dev/null 2>&1 || { echo "::error::$t not found on PATH after bootstrap"; exit 1; }
           done < tests/verify-tools.txt
+
+      - name: System info (fastfetch)
+        run: |
+          export PATH="$HOME/.local/bin:$HOME/.local/share/mise/bin:$HOME/.local/share/mise/shims:$PATH"
+          fastfetch
