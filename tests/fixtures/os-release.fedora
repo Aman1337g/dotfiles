@@ -1,0 +1,6 @@
+NAME="Fedora Linux"
+VERSION="40 (Container Image)"
+ID=fedora
+VERSION_ID=40
+PLATFORM_ID="platform:f40"
+PRETTY_NAME="Fedora Linux 40 (Container Image)"
