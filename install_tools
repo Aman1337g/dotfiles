@@ -46,6 +46,35 @@ _read_manifest() {
   grep -vE '^[[:space:]]*(#|$)' "$file"
 }
 
+# Debian only (not Ubuntu or other apt derivatives) — points apt at Debian testing.
+# Mirrors scripts/scripts/mangowc_bootstrapper's write_testing_sources(). Idempotent:
+# skips if debian-testing.sources already exists.
+_debian_use_testing_sources() {
+  [ -r /etc/os-release ] || return 0
+  grep -q '^ID=debian$' /etc/os-release || return 0
+  [ -f /etc/apt/sources.list.d/debian-testing.sources ] && return 0
+
+  echo "📦 Switching Debian apt sources to testing..."
+  _sudo mkdir -p /etc/apt/sources.list.d
+  [ -f /etc/apt/sources.list ] && _sudo mv /etc/apt/sources.list /etc/apt/sources.list.disabled-by-dotfiles
+  _sudo find /etc/apt/sources.list.d -maxdepth 1 -type f -name '*.sources' \
+    ! -name 'debian-testing.sources' -exec mv {} {}.disabled-by-dotfiles \;
+
+  cat <<'EOF' | _sudo tee /etc/apt/sources.list.d/debian-testing.sources >/dev/null
+Types: deb
+URIs: https://deb.debian.org/debian
+Suites: testing testing-updates
+Components: main contrib non-free non-free-firmware
+Signed-By: /usr/share/keyrings/debian-archive-keyring.gpg
+
+Types: deb
+URIs: https://security.debian.org/debian-security
+Suites: testing-security
+Components: main contrib non-free non-free-firmware
+Signed-By: /usr/share/keyrings/debian-archive-keyring.gpg
+EOF
+}
+
 # ==========================================
 # ⚙️ 1. OS-LEVEL PREREQUISITES
 # ==========================================
@@ -106,6 +135,7 @@ brew)
 
 apt)
   echo "🐧 Debian-based system detected. Installing lifelines via apt..."
+  _debian_use_testing_sources
   _sudo apt-get update -y
   mapfile -t APT_BASE < <(_read_manifest packages.apt)
   _sudo apt-get install -y "${APT_BASE[@]}"

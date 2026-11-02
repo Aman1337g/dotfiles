@@ -52,6 +52,7 @@ The post-bootstrap tool-verification list lives once, in `tests/verify-tools.txt
 - `pacman`/libalpm ignores `CURL_CA_BUNDLE`/`SSL_CERT_FILE` — a corporate TLS-inspection CA has to go into the system trust store instead.
 - `get.docker.com` is unsupported on Arch (pacman installs docker directly); AUR/yay is out of scope.
 - starship isn't in default Debian/Fedora repos — `install_tools` falls back to the upstream installer.
+- Debian (not Ubuntu) gets its apt sources switched to `testing` (`_debian_use_testing_sources`, gated on `ID=debian`) — deliberate, opinionated, idempotent. Fresh Debian WSL images can also lack git/curl entirely; `setup`'s `ensure_tool()` installs both before anything else runs.
 - Fedora's minimal image needs an explicit `libatomic` package for node.
 - mise's GitHub release fetches (e.g. neovim) hit the unauthenticated API rate limit — pass `GITHUB_TOKEN`.
 - `mise install -y` returns nonzero if even one tool fails — `install_tools` catches that itself (warns, keeps going to `mise reshim`) so one transient failure doesn't strand every other tool unshimmed; don't re-wrap it in another layer of error-swallowing.
