@@ -1,0 +1,8 @@
+# Termux (Android) base lifelines, installed via pkg before mise takes over.
+git
+curl
+wget
+jq
+tmux
+openssh
+stow

@@ -1,0 +1,4 @@
+# Fedora GUI desktop extras, installed via `install_tools --gui`.
+kitty
+zathura
+qutebrowser

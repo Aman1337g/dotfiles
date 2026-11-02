@@ -1,0 +1,54 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  shellcheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: shellcheck
+        run: shellcheck setup install_tools link lib/detect.sh lib/backup.sh
+
+  bootstrap-dry-run:
+    needs: shellcheck
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: debian-12
+            image: debian:12
+            install_prereqs: "apt-get update -y && DEBIAN_FRONTEND=noninteractive apt-get install -y git curl ca-certificates"
+          - name: fedora-40
+            image: fedora:40
+            install_prereqs: "dnf install -y git curl"
+    runs-on: ubuntu-latest
+    container:
+      image: ${{ matrix.image }}
+    steps:
+      - name: Install checkout prerequisites
+        run: ${{ matrix.install_prereqs }}
+
+      - uses: actions/checkout@v4
+
+      - name: Dry-run bootstrap (--auto --env=container)
+        env:
+          # Avoids GitHub API rate-limiting when mise fetches releases (e.g. neovim).
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # setup clones upstream into ~/.dotfiles when it's missing; seed it with this checkout so the PR code is what gets tested.
+          rm -rf "$HOME/.dotfiles"
+          cp -a "$GITHUB_WORKSPACE" "$HOME/.dotfiles"
+          cd "$HOME/.dotfiles"
+          chmod +x setup install_tools link
+          ./setup --auto --env=container
+
+      - name: Verify core tools resolved
+        run: |
+          export PATH="$HOME/.local/bin:$HOME/.local/share/mise/bin:$HOME/.local/share/mise/shims:$PATH"
+          for t in stow zoxide fzf starship mise; do
+            command -v "$t" || { echo "::error::$t not found on PATH after bootstrap"; exit 1; }
+          done

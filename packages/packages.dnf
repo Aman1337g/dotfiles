@@ -1,0 +1,13 @@
+# Fedora/RHEL base lifelines, installed via dnf before mise takes over.
+git
+curl
+unzip
+stow
+gcc
+gcc-c++
+make
+libatomic
+ca-certificates
+jq
+zoxide
+fzf

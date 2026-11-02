@@ -1,0 +1,22 @@
+{
+    "$schema": "https://aka.ms/winget-packages.schema.2.0.json",
+    "CreationDate": "2025-01-01T00:00:00.000-00:00",
+    "Sources": [
+        {
+            "Packages": [
+                { "PackageIdentifier": "dandavison.delta" },
+                { "PackageIdentifier": "Neovim.Neovim" },
+                { "PackageIdentifier": "junegunn.fzf" },
+                { "PackageIdentifier": "eza-community.eza" },
+                { "PackageIdentifier": "zig.zig" }
+            ],
+            "SourceDetails": {
+                "Argument": "https://cdn.winget.microsoft.com/cache",
+                "Identifier": "Microsoft.Winget.Source_8wekyb3d8bbwe",
+                "Name": "winget",
+                "Type": "Microsoft.PreIndexed.Package"
+            }
+        }
+    ],
+    "WinGetVersion": "1.6.3"
+}
