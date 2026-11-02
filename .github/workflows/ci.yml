@@ -46,6 +46,9 @@ jobs:
             pkg_mgr: pacman
             install_prereqs: "pacman -Syu --noconfirm git curl"
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
     container:
       image: ${{ matrix.image }}
     steps:
