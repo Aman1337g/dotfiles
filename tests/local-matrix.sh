@@ -71,7 +71,7 @@ run_step "detect-fixtures" "$LOG_DIR/detect-fixtures.log" bash "$SCRIPT_DIR/dete
 # Each image's default shell may be sh/dash (lacks process substitution, arrays, etc.), so
 # every per-distro run below explicitly invokes bash via `bash -c` — mirrors ci.yml's
 # `defaults: run: shell: bash` pin on the bootstrap-dry-run job.
-# shellcheck disable=SC2016
+# shellcheck disable=SC2016  # INNER_SCRIPT is single-quoted on purpose; it expands inside the container
 INNER_SCRIPT='
 set -eo pipefail
 # pacman (libalpm) ignores CURL_CA_BUNDLE/SSL_CERT_FILE, so install the host bundle into the system trust store.

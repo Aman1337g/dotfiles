@@ -2,6 +2,8 @@
 
 A production-grade, cross-platform collection of dotfiles and environment configurations. Built for speed, portability, and robust fallback handling across Debian/Ubuntu, Fedora, Arch Linux (and derivatives: Manjaro, EndeavourOS, CachyOS, Garuda, ArcoLinux), Void Linux, macOS, Alpine, Windows (WSL/Git Bash), Android (Termux), and Ephemeral Containers (DevPod/Docker).
 
+> AI assistants: see [AGENTS.md](AGENTS.md).
+
 ## ✨ Features
 * **Mise-First Architecture:** Relegates native package managers (`apt`, `brew`) to basic lifelines, relying entirely on `mise` to dynamically provision exact versions of CLI tools (Neovim, Starship, Eza, FZF, Zoxide, Yazi, Bat, Node.js, Python, Terraform, kubectl, Helm) across every OS via environment-specific `config.toml` files.
 * **Corporate Proxy Immune:** Features a custom Windows-to-Linux interop script (`sync_certs`) that automatically extracts Zscaler Root CAs from the Windows registry and injects them into the WSL trust store to prevent SSL handshake failures without disabling TLS verification globally.
@@ -14,7 +16,7 @@ A production-grade, cross-platform collection of dotfiles and environment config
 
 ---
 
-## � Repository Structure
+## 📁 Repository Structure
 
 ```
 ~/.dotfiles/

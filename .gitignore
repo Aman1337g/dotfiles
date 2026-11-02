@@ -1,3 +1,6 @@
+# Personal AI-assistant overrides (not shared)
+CLAUDE.local.md
+
 # NvChad local config
 nvim/.config/nvim/lua/chadrc.lua
 
