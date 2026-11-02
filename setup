@@ -35,11 +35,45 @@ echo "========================================"
 echo "🚀 Starting System Bootstrap..."
 echo "========================================"
 
-# --- 📱 Termux Pre-Flight: ensure git exists before we try to clone ---
-if [ -n "${TERMUX_VERSION:-}" ] && ! command -v git >/dev/null 2>&1; then
-  echo "📱 Termux detected without Git. Installing prerequisite..."
-  pkg update -y && pkg install git -y
-fi
+# --- Pre-flight: ensure git exists before we try to clone ---
+# Runs before lib/detect.sh is available on disk, so it probes package managers inline.
+ensure_git() {
+  command -v git >/dev/null 2>&1 && return 0
+
+  local priv=""
+  if [ "$(id -u)" -ne 0 ]; then
+    if command -v sudo >/dev/null 2>&1; then
+      priv="sudo"
+    else
+      echo "❌ git is missing and neither root nor sudo is available. Install git, then re-run." >&2
+      exit 1
+    fi
+  fi
+
+  echo "📦 git not found. Installing prerequisite..."
+  # </dev/null: when piped (curl | bash), stdin is this script; keep installers from consuming it.
+  if [ -n "${TERMUX_VERSION:-}" ] || command -v pkg >/dev/null 2>&1; then
+    pkg update -y </dev/null && pkg install -y git </dev/null
+  elif command -v apt-get >/dev/null 2>&1; then
+    $priv apt-get update -y </dev/null && DEBIAN_FRONTEND=noninteractive $priv apt-get install -y git </dev/null
+  elif command -v dnf >/dev/null 2>&1; then
+    $priv dnf install -y git </dev/null
+  elif command -v pacman >/dev/null 2>&1; then
+    $priv pacman -Syu --noconfirm --needed git </dev/null
+  elif command -v xbps-install >/dev/null 2>&1; then
+    $priv xbps-install -Sy git </dev/null
+  elif command -v apk >/dev/null 2>&1; then
+    $priv apk add git </dev/null
+  elif command -v brew >/dev/null 2>&1; then
+    brew install git </dev/null
+  else
+    echo "❌ git is missing and no supported package manager was found. Install git, then re-run." >&2
+    exit 1
+  fi
+
+  command -v git >/dev/null 2>&1 || { echo "❌ git installation failed." >&2; exit 1; }
+}
+ensure_git
 
 DOTFILES_DIR="$HOME/.dotfiles"
 

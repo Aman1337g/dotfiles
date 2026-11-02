@@ -46,6 +46,7 @@ The post-bootstrap tool-verification list lives once, in `tests/verify-tools.txt
 - GitHub Actions container jobs default `run:` steps to `sh` (dash on Debian/Ubuntu).
 - Dash lacks process substitution (`<(...)`) and arrays, which `mapfile`-based scripts need — pin `defaults.run.shell: bash` on any job using `container:`.
 - `setup` clones upstream into `~/.dotfiles` if it's missing.
+- `ensure_git` in `setup` runs before the clone and cannot use `lib/detect.sh` (not on disk yet): it probes package managers inline and keeps `</dev/null` on installers so they can't eat a piped (`curl | bash`) script.
 - CI/local harnesses must seed `~/.dotfiles` from the checkout first, or they silently test remote `main` instead of the PR.
 - Arch: always `pacman -Syu --needed`, never bare `-Sy` (partial upgrades are unsupported).
 - `pacman`/libalpm ignores `CURL_CA_BUNDLE`/`SSL_CERT_FILE` — a corporate TLS-inspection CA has to go into the system trust store instead.
@@ -53,6 +54,7 @@ The post-bootstrap tool-verification list lives once, in `tests/verify-tools.txt
 - starship isn't in default Debian/Fedora repos — `install_tools` falls back to the upstream installer.
 - Fedora's minimal image needs an explicit `libatomic` package for node.
 - mise's GitHub release fetches (e.g. neovim) hit the unauthenticated API rate limit — pass `GITHUB_TOKEN`.
+- `mise install -y` returns nonzero if even one tool fails — `install_tools` catches that itself (warns, keeps going to `mise reshim`) so one transient failure doesn't strand every other tool unshimmed; don't re-wrap it in another layer of error-swallowing.
 - The repo author's network does TLS inspection; `local-matrix.sh` optionally mounts a host CA bundle for that — not needed on GitHub-hosted runners.
 - Never swallow a command's output with `>/dev/null 2>&1` under `set -e` if something downstream depends on its exit code.
 - Never pipe into `tail`/`grep` without `pipefail` — both have silently masked real failures here before.
