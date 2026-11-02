@@ -46,6 +46,67 @@ _read_manifest() {
   grep -vE '^[[:space:]]*(#|$)' "$file"
 }
 
+_is_debian() {
+  [ -r /etc/os-release ] && grep -q '^ID=debian$' /etc/os-release
+}
+
+# Debian only (not Ubuntu or other apt derivatives) — points apt at Debian testing.
+# Mirrors scripts/scripts/mangowc_bootstrapper's write_testing_sources(). Idempotent:
+# skips if debian-testing.sources already exists.
+_debian_use_testing_sources() {
+  _is_debian || return 0
+  [ -f /etc/apt/sources.list.d/debian-testing.sources ] && return 0
+
+  echo "📦 Switching Debian apt sources to testing..."
+  _sudo mkdir -p /etc/apt/sources.list.d
+  [ -f /etc/apt/sources.list ] && _sudo mv /etc/apt/sources.list /etc/apt/sources.list.disabled-by-dotfiles
+  _sudo find /etc/apt/sources.list.d -maxdepth 1 -type f -name '*.sources' \
+    ! -name 'debian-testing.sources' -exec mv {} {}.disabled-by-dotfiles \;
+
+  cat <<'EOF' | _sudo tee /etc/apt/sources.list.d/debian-testing.sources >/dev/null
+Types: deb
+URIs: https://deb.debian.org/debian
+Suites: testing testing-updates
+Components: main contrib non-free non-free-firmware
+Signed-By: /usr/share/keyrings/debian-archive-keyring.gpg
+
+Types: deb
+URIs: https://security.debian.org/debian-security
+Suites: testing-security
+Components: main contrib non-free non-free-firmware
+Signed-By: /usr/share/keyrings/debian-archive-keyring.gpg
+EOF
+}
+
+# bookworm -> testing skips a release: nothing in testing Replaces bookworm's libcurl3-gnutls, so dpkg
+# refuses to unpack libcurl4-gnutls over its files and full-upgrade fails. Remove it first, remember what
+# apt removes with it (e.g. git), and reinstall those from testing after the upgrade.
+_DEBIAN_REMOVED_RDEPS=()
+_debian_drop_obsolete_libcurl() {
+  _is_debian || return 0
+  dpkg-query -W -f='${Status}' libcurl3-gnutls 2>/dev/null | grep -q 'install ok installed' || return 0
+
+  mapfile -t _DEBIAN_REMOVED_RDEPS < <(apt-get remove -s libcurl3-gnutls | awk '/^Remv /{print $2}' | grep -vx 'libcurl3-gnutls')
+  echo "📦 Removing obsolete libcurl3-gnutls (and ${#_DEBIAN_REMOVED_RDEPS[@]} dependent package(s)) before the testing upgrade..."
+  _sudo env DEBIAN_FRONTEND=noninteractive apt-get remove -y libcurl3-gnutls
+}
+
+_debian_restore_removed_rdeps() {
+  [ "${#_DEBIAN_REMOVED_RDEPS[@]}" -gt 0 ] || return 0
+  local pkg cand keep=()
+  for pkg in "${_DEBIAN_REMOVED_RDEPS[@]}"; do
+    cand="$(apt-cache policy "$pkg" 2>/dev/null | awk '/Candidate:/{print $2}')"
+    if [ -n "$cand" ] && [ "$cand" != "(none)" ]; then
+      keep+=("$pkg")
+    else
+      echo "⚠️  $pkg has no candidate in testing; not reinstalling."
+    fi
+  done
+  [ "${#keep[@]}" -gt 0 ] || return 0
+  echo "📦 Reinstalling packages removed with libcurl3-gnutls: ${keep[*]}"
+  _sudo env DEBIAN_FRONTEND=noninteractive apt-get install -y "${keep[@]}"
+}
+
 # ==========================================
 # ⚙️ 1. OS-LEVEL PREREQUISITES
 # ==========================================
@@ -106,7 +167,18 @@ brew)
 
 apt)
   echo "🐧 Debian-based system detected. Installing lifelines via apt..."
+  _debian_use_testing_sources
   _sudo apt-get update -y
+
+  # Jumping stable -> testing needs full-upgrade first (a targeted `apt-get install` can't
+  # resolve the transitional renames), after clearing the one package full-upgrade can't replace.
+  if _is_debian; then
+    _debian_drop_obsolete_libcurl
+    _sudo env DEBIAN_FRONTEND=noninteractive apt-get full-upgrade -y \
+      -o Dpkg::Options::=--force-confdef -o Dpkg::Options::=--force-confold
+    _debian_restore_removed_rdeps
+  fi
+
   mapfile -t APT_BASE < <(_read_manifest packages.apt)
   _sudo apt-get install -y "${APT_BASE[@]}"
 
