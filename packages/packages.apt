@@ -1,0 +1,10 @@
+# Debian/Ubuntu/WSL base lifelines, installed via apt before mise takes over.
+git
+curl
+unzip
+stow
+build-essential
+ca-certificates
+jq
+zoxide
+fzf

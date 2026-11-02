@@ -1,0 +1,7 @@
+# Alpine base lifelines, installed via apk before mise takes over.
+git
+curl
+unzip
+stow
+build-base
+jq

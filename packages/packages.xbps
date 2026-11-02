@@ -1,0 +1,11 @@
+# Void Linux base lifelines, installed via xbps-install before mise takes over.
+git
+curl
+unzip
+stow
+base-devel
+ca-certificates
+jq
+zoxide
+fzf
+starship

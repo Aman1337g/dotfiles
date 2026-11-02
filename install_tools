@@ -3,6 +3,10 @@
 
 set -euo pipefail
 
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)"
+# shellcheck source=lib/detect.sh
+source "$SCRIPT_DIR/lib/detect.sh"
+
 echo "========================================"
 echo "🚀 Starting System Dependencies & Mise Engine..."
 echo "========================================"
@@ -19,25 +23,28 @@ while [[ "$#" -gt 0 ]]; do
   shift
 done
 
-# ---------------------------------------------------------
-# 📝 SYSTEM BASE PACKAGES (LIFELINES ONLY)
-# All user tools (Neovim, Eza, Starship, etc.) are managed
-# by ~/.config/mise/config.toml at the end of the script.
-# ---------------------------------------------------------
-BREW_BASE=(git curl unzip stow fzf zoxide starship)
-APT_BASE=(git curl unzip stow build-essential ca-certificates jq zoxide fzf starship)
-APK_BASE=(git curl unzip stow build-base jq)
-TERMUX_BASE=(git curl wget jq tmux openssh stow)
-WINDOWS_BASE=(dandavison.delta Neovim.Neovim junegunn.fzf eza-community.eza zig.zig)
-
-# GUI Packages (Installed only if --gui is passed)
-APT_GUI=(kitty zathura qutebrowser)
+# Falls back to self-detection when run standalone (not via `setup`).
+[ -z "$ENV_TYPE" ] && ENV_TYPE="$(detect_env_type)"
+PKG_MGR="$(detect_pkg_mgr)"
 
 _has() { command -v "$1" >/dev/null 2>&1; }
 
 # Sudo wrapper: runs directly when sudo is absent (rootless containers, Termux).
 # This makes every 'sudo <cmd>' below safe in CI and minimal environments.
-_sudo() { if _has sudo; then sudo "$@"; else "$@"; fi; }
+_sudo() {
+  if _has sudo; then
+    sudo "$@"
+  else
+    "$@"
+  fi
+}
+
+# Reads a plain-text manifest under packages/ (one package per line, '#' comments allowed).
+_read_manifest() {
+  local file="$SCRIPT_DIR/packages/$1"
+  [ -f "$file" ] || return 0
+  grep -vE '^[[:space:]]*(#|$)' "$file"
+}
 
 # ==========================================
 # ⚙️ 1. OS-LEVEL PREREQUISITES
@@ -53,26 +60,54 @@ if [ "$ENV_TYPE" = "wsl" ]; then
   fi
 fi
 
-# --- 0. Android (Termux) ---
-if [ "$ENV_TYPE" = "termux" ] || [ -n "${TERMUX_VERSION:-}" ]; then
+# Native Docker Engine + DevPod CLI, shared across every native-Linux package manager.
+# Skipped inside containers/WSL, where Docker is either unavailable or host-provided.
+_install_linux_lifelines() {
+  if [ "$ENV_TYPE" != "container" ] && [ "$ENV_TYPE" != "wsl" ] && ! _has docker; then
+    echo "🐳 Installing native Docker Engine..."
+    if [ "$PKG_MGR" = "pacman" ]; then
+      # get.docker.com is unsupported on Arch; pacman ships docker directly.
+      _sudo pacman -S --noconfirm --needed docker
+      _has systemctl && { _sudo systemctl enable --now docker.service || true; }
+    else
+      # Pipe directly to sh — never mutate a downloaded script before execution.
+      # TODO: pin a version + checksum instead of trusting the live install script.
+      curl -fsSL https://get.docker.com | _sudo sh
+    fi
+    _sudo usermod -aG docker "${USER:-$(id -un)}"
+    echo "⚠️ Docker installed. (Log out and back in for group permissions to apply)."
+  fi
+
+  if ! _has devpod; then
+    echo "🚀 Installing DevPod CLI..."
+    curl -L -o devpod "https://github.com/loft-sh/devpod/releases/latest/download/devpod-linux-amd64"
+    _sudo install -c -m 0755 devpod /usr/local/bin
+    rm devpod
+  fi
+}
+
+case "$PKG_MGR" in
+pkg)
   echo "📱 Termux detected. Installing system base..."
   pkg update -y
+  mapfile -t TERMUX_BASE < <(_read_manifest packages.termux)
   pkg install -y "${TERMUX_BASE[@]}"
 
   # Termux fallback: If mise struggles with ARM Android, install core natively
   if ! _has eza; then
     pkg install -y eza bat fzf zoxide starship neovim
   fi
+  ;;
 
-# --- 1. macOS (Homebrew) ---
-elif _has brew || [ "$ENV_TYPE" = "mac" ]; then
+brew)
   echo "🍏 macOS detected. Installing system base via Homebrew..."
-  brew install "${BREW_BASE[@]}"
+  brew bundle --file="$SCRIPT_DIR/packages/Brewfile"
+  ;;
 
-# --- 2. Debian / Ubuntu / WSL / Container ---
-elif _has apt || [[ "$ENV_TYPE" =~ (linux|wsl|container) ]]; then
+apt)
   echo "🐧 Debian-based system detected. Installing lifelines via apt..."
   _sudo apt-get update -y
+  mapfile -t APT_BASE < <(_read_manifest packages.apt)
   _sudo apt-get install -y "${APT_BASE[@]}"
 
   # Ubuntu calls bat 'batcat', fix for system scripts that expect 'bat'
@@ -82,46 +117,90 @@ elif _has apt || [[ "$ENV_TYPE" =~ (linux|wsl|container) ]]; then
   # --- Native GUI Applications ---
   if [ "$INSTALL_GUI" = true ]; then
     echo "🖥️  Installing Native GUI Applications..."
+    mapfile -t APT_GUI < <(_read_manifest gui.apt)
     _sudo apt-get install -y "${APT_GUI[@]}"
   fi
 
-  # --- 🐳 Docker Native Engine (Skip in Containers/WSL) ---
-  if [ "$ENV_TYPE" != "container" ] && [ "$ENV_TYPE" != "wsl" ] && ! _has docker; then
-    echo "🐳 Installing native Docker Engine..."
-    # Pipe directly to sh — never mutate a downloaded script before execution.
-    curl -fsSL https://get.docker.com | _sudo sh
-    _sudo usermod -aG docker "$USER"
-    echo "⚠️ Docker installed. (Log out and back in for group permissions to apply)."
+  _install_linux_lifelines
+  ;;
+
+dnf)
+  echo "🎩 Fedora/RHEL system detected. Installing lifelines via dnf..."
+  mapfile -t DNF_BASE < <(_read_manifest packages.dnf)
+  _sudo dnf install -y "${DNF_BASE[@]}"
+
+  if [ "$INSTALL_GUI" = true ]; then
+    echo "🖥️  Installing Native GUI Applications..."
+    mapfile -t DNF_GUI < <(_read_manifest gui.dnf)
+    _sudo dnf install -y "${DNF_GUI[@]}"
   fi
 
-  # --- 🚀 DevPod CLI ---
-  if ! _has devpod; then
-    echo "🚀 Installing DevPod CLI..."
-    curl -L -o devpod "https://github.com/loft-sh/devpod/releases/latest/download/devpod-linux-amd64"
-    _sudo install -c -m 0755 devpod /usr/local/bin
-    rm devpod
+  _install_linux_lifelines
+  ;;
+
+xbps)
+  echo "⚡ Void Linux detected. Installing lifelines via xbps..."
+  mapfile -t XBPS_BASE < <(_read_manifest packages.xbps)
+  _sudo xbps-install -Sy "${XBPS_BASE[@]}"
+
+  if [ "$INSTALL_GUI" = true ]; then
+    echo "🖥️  Installing Native GUI Applications..."
+    mapfile -t XBPS_GUI < <(_read_manifest gui.xbps)
+    _sudo xbps-install -Sy "${XBPS_GUI[@]}"
   fi
 
-# --- 3. Alpine Linux ---
-elif _has apk; then
+  _install_linux_lifelines
+  ;;
+
+apk)
   echo "🏔️ Alpine detected. Using apk..."
+  mapfile -t APK_BASE < <(_read_manifest packages.apk)
   _sudo apk add "${APK_BASE[@]}"
+  ;;
 
-# --- 4. Windows Git Bash ---
-elif [[ "$OSTYPE" == "msys" || "$OSTYPE" == "cygwin" ]] || [ "$ENV_TYPE" = "windows" ]; then
+pacman)
+  echo "🏹 Arch Linux family detected. Installing lifelines via pacman..."
+  # Never bare -Sy: partial upgrades are unsupported on Arch, always sync+upgrade together.
+  mapfile -t PACMAN_BASE < <(_read_manifest packages.pacman)
+  _sudo pacman -Syu --noconfirm --needed "${PACMAN_BASE[@]}"
+
+  if [ "$INSTALL_GUI" = true ]; then
+    echo "🖥️  Installing Native GUI Applications..."
+    mapfile -t PACMAN_GUI < <(_read_manifest gui.pacman)
+    _sudo pacman -S --noconfirm --needed "${PACMAN_GUI[@]}"
+  fi
+
+  _install_linux_lifelines
+  ;;
+
+winget)
   echo "🪟 Windows Git Bash detected. Bypassing UAC..."
   mkdir -p ~/.local/bin
 
   if _has winget; then
-    for pkg in "${WINDOWS_BASE[@]}"; do
-      winget install --id="$pkg" --scope user --accept-package-agreements --accept-source-agreements || true
-    done
+    winget import -i "$SCRIPT_DIR/packages/winget.json" --accept-package-agreements --accept-source-agreements || true
   fi
 
   # Ensure local bin is ready for portable binaries
   if [ -d "$HOME/.local/bin" ]; then
     chmod +x "$HOME/.local/bin"/* 2>/dev/null || true
   fi
+  ;;
+
+*)
+  echo "⚠️  Unrecognized package manager ('$PKG_MGR'). Skipping OS-level lifelines; relying on mise only."
+  ;;
+esac
+
+# starship isn't in the default apt/dnf repos (Debian 12, Fedora), so fall back to the upstream
+# installer. Not needed for pacman (starship ships in Arch's `extra` repo) or xbps (Void ships it too).
+if ! _has starship && [[ "$PKG_MGR" =~ ^(apt|dnf|apk)$ ]]; then
+  echo "⭐ Installing starship via upstream installer..."
+  mkdir -p "$HOME/.local/bin"
+  # TODO: pin a version + checksum instead of trusting the live install script.
+  # stdout only silenced (install.sh dumps a long shell-init usage blurb); stderr still surfaces real errors.
+  curl -fsSL https://starship.rs/install.sh | sh -s -- -y -b "$HOME/.local/bin" >/dev/null \
+    || echo "⚠️  starship install failed; continuing."
 fi
 
 # ==========================================
@@ -156,6 +235,7 @@ if ! _has mise && [ ! -f "$HOME/.local/bin/mise.exe" ] && [ ! -f "$HOME/.local/b
     rm -rf /tmp/mise_dl
   else
     # Native Linux / macOS installer
+    # TODO: pin a version + checksum instead of trusting the live install script.
     curl -sS https://mise.run | sh
   fi
 fi

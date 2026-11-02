@@ -1,0 +1,8 @@
+# Homebrew Bundle file — macOS base lifelines, installed via `brew bundle` before mise takes over.
+brew "git"
+brew "curl"
+brew "unzip"
+brew "stow"
+brew "fzf"
+brew "zoxide"
+brew "starship"

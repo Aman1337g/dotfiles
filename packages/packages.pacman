@@ -1,0 +1,13 @@
+# Arch Linux family base lifelines, installed via pacman before mise takes over.
+# NOTE: package names below are from general knowledge of the Arch repos, not a
+# live query against archlinux.org — flagged as such in the PR; verify on first real run.
+git
+curl
+unzip
+stow
+base-devel
+ca-certificates
+jq
+zoxide
+fzf
+starship

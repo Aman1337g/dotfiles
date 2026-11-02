@@ -4,9 +4,21 @@
 
 # AWS credential paths: only set on WSL where the Windows filesystem is mounted.
 # On native Linux / macOS these default to ~/.aws/* which is correct.
+# Derived dynamically (no hardcoded Windows username) — if it can't be resolved,
+# falls back to leaving these unset so AWS CLI uses its own ~/.aws/* default.
 if [[ -r /proc/version && "$(< /proc/version)" == *[Mm]icrosoft* ]]; then
-  export AWS_SHARED_CREDENTIALS_FILE="/mnt/c/Users/AMAN.GUPTA7/.aws/credentials"
-  export AWS_CONFIG_FILE="/mnt/c/Users/AMAN.GUPTA7/.aws/config"
+  _win_userprofile=""
+  if command -v wslpath >/dev/null 2>&1; then
+    _win_userprofile_raw="$(cmd.exe /c "echo %USERPROFILE%" 2>/dev/null | tr -d '\r')"
+    [ -n "$_win_userprofile_raw" ] && _win_userprofile="$(wslpath "$_win_userprofile_raw" 2>/dev/null)"
+  fi
+
+  if [ -n "$_win_userprofile" ] && [ -d "$_win_userprofile/.aws" ]; then
+    export AWS_SHARED_CREDENTIALS_FILE="$_win_userprofile/.aws/credentials"
+    export AWS_CONFIG_FILE="$_win_userprofile/.aws/config"
+  fi
+
+  unset _win_userprofile _win_userprofile_raw
 fi
 
 # --- Idempotent Path Appender ---

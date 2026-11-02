@@ -1,4 +1,4 @@
-# ~/.config/mise/config.linux.toml  —  Linux / WSL / Alpine
+# ~/.config/mise/config.linux.toml  —  Linux / WSL / Alpine / Arch
 # Loaded in addition to config.toml when MISE_ENV=linux.
 
 [tools]

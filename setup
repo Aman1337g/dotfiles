@@ -23,32 +23,56 @@ while [[ "$#" -gt 0 ]]; do
   shift
 done
 
-# ==========================================
-# 🧠 SMART AUTO-DETECTION & TTY CHECK
-# ==========================================
-DEFAULT_ENV="linux"
-if [ -n "${TERMUX_VERSION:-}" ]; then
-  DEFAULT_ENV="termux"
-elif [ -f /.dockerenv ] || [ -f /run/.containerenv ]; then
-  DEFAULT_ENV="container"
-elif grep -qi microsoft /proc/version 2>/dev/null; then
-  DEFAULT_ENV="wsl"
-elif [[ "$OSTYPE" == "darwin"* ]]; then
-  DEFAULT_ENV="mac"
-elif [[ "$OSTYPE" == "msys" || "$OSTYPE" == "cygwin" ]]; then
-  DEFAULT_ENV="windows"
-fi
-
-# If stdin is not a terminal (e.g., curl | bash), force AUTO_MODE
-if [ ! -t 0 ]; then
-  echo "⚠️ Piped execution detected. Forcing Auto Mode."
+# If stdin is not a terminal (e.g., curl | bash) or /dev/tty isn't reachable
+# (minimal containers, some CI runners), force AUTO_MODE — `read -p ... </dev/tty`
+# would otherwise fail even when stdin itself looks like a tty.
+if [ ! -t 0 ] || [ ! -r /dev/tty ]; then
+  echo "⚠️ No interactive TTY available. Forcing Auto Mode."
   AUTO_MODE=true
 fi
+
+echo "========================================"
+echo "🚀 Starting System Bootstrap..."
+echo "========================================"
+
+# --- 📱 Termux Pre-Flight: ensure git exists before we try to clone ---
+if [ -n "${TERMUX_VERSION:-}" ] && ! command -v git >/dev/null 2>&1; then
+  echo "📱 Termux detected without Git. Installing prerequisite..."
+  pkg update -y && pkg install git -y
+fi
+
+DOTFILES_DIR="$HOME/.dotfiles"
+
+# ==========================================
+# 📦 2. CLONE DOTFILES
+# ==========================================
+# Cloned BEFORE environment detection/menu so that lib/detect.sh and lib/backup.sh
+# are guaranteed to exist on disk by the time anything needs to source them —
+# this script itself may be running piped (curl | bash) with no local repo yet.
+if [ ! -d "$DOTFILES_DIR" ]; then
+  echo "📦 Cloning dotfiles repository..."
+  git clone https://github.com/Aman1337g/dotfiles.git "$DOTFILES_DIR"
+else
+  echo "✅ Dotfiles repository already exists at $DOTFILES_DIR"
+fi
+
+cd "$DOTFILES_DIR" || exit 1
+chmod +x install_tools link setup
+
+# shellcheck source=lib/detect.sh
+source "$DOTFILES_DIR/lib/detect.sh"
+# shellcheck source=lib/backup.sh
+source "$DOTFILES_DIR/lib/backup.sh"
+
+# ==========================================
+# 🧠 SMART AUTO-DETECTION
+# ==========================================
+DEFAULT_ENV="$(detect_env_type)"
 
 export ENV_TYPE
 
 # ==========================================
-# 🗣️ 2. INTERACTIVE MENU (If not in --auto mode)
+# 🗣️ 3. INTERACTIVE MENU (If not in --auto mode)
 # ==========================================
 if [ "$AUTO_MODE" = false ]; then
   echo ""
@@ -56,13 +80,13 @@ if [ "$AUTO_MODE" = false ]; then
 
   if [ -z "$ENV_TYPE" ]; then
     echo "Select your target environment:"
-    echo "  1) Linux (Native/Debian/Arch)"
+    echo "  1) Linux (Native, Debian/Fedora/Void/Arch/...)"
     echo "  2) WSL (Windows Subsystem for Linux)"
     echo "  3) macOS"
     echo "  4) DevPod / Container (Ephemeral)"
     echo "  5) Windows Git Bash"
     # Force read from tty just in case
-    read -p "Enter choice [1-5] (Default: $DEFAULT_ENV): " env_choice </dev/tty
+    read -r -p "Enter choice [1-5] (Default: $DEFAULT_ENV): " env_choice </dev/tty
     case $env_choice in
     1) ENV_TYPE="linux" ;;
     2) ENV_TYPE="wsl" ;;
@@ -74,7 +98,7 @@ if [ "$AUTO_MODE" = false ]; then
   fi
 
   if [[ "$ENV_TYPE" =~ ^(linux|mac|wsl)$ ]]; then
-    read -p "🖥️  Install GUI Desktop Apps (Kitty, Zathura, etc.)? (y/n): " gui_choice </dev/tty
+    read -r -p "🖥️  Install GUI Desktop Apps (Kitty, Zathura, etc.)? (y/n): " gui_choice </dev/tty
     if [[ "$gui_choice" =~ ^[Yy]$ ]]; then
       INSTALL_GUI=true
     fi
@@ -87,94 +111,14 @@ else
   fi
 fi
 
+# Termux always wins, regardless of what the menu/auto-detection landed on.
+if [ -n "${TERMUX_VERSION:-}" ]; then
+  ENV_TYPE="termux"
+fi
+
 export ENV_TYPE
 export INSTALL_GUI
 export AUTO_MODE
-
-echo "========================================"
-echo "🚀 Starting System Bootstrap..."
-echo "========================================"
-
-# --- 📱 Termux Pre-Flight Check ---
-if [ -n "${TERMUX_VERSION:-}" ]; then
-  ENV_TYPE="termux"
-  if ! command -v git >/dev/null 2>&1; then
-    echo "📱 Termux detected without Git. Installing prerequisite..."
-    pkg update -y && pkg install git -y
-  fi
-fi
-
-DOTFILES_DIR="$HOME/.dotfiles"
-
-# ==========================================
-# 📦 3. CLONE DOTFILES
-# ==========================================
-if [ ! -d "$DOTFILES_DIR" ]; then
-  echo "📦 Cloning dotfiles repository..."
-  git clone https://github.com/Aman1337g/dotfiles.git "$DOTFILES_DIR"
-else
-  echo "✅ Dotfiles repository already exists at $DOTFILES_DIR"
-fi
-
-cd "$DOTFILES_DIR" || exit 1
-chmod +x install_tools link setup
-
-# ==========================================
-# 🔧 Helper: Centralized Backup Management
-# ==========================================
-BACKUP_ROOT="${XDG_STATE_HOME:-$HOME/.local/state}/dotfiles/backups"
-KEEP_BACKUPS="${DOTFILES_KEEP_BACKUPS:-5}"
-
-setup_backup_dest_for() {
-  local dest="$1"
-  local rel
-  
-  if [[ "$dest" == "$HOME"/* ]]; then
-    rel="${dest#"$HOME"/}"
-  else
-    rel="${dest#/}"
-    rel="${rel//:/_}"
-  fi
-  
-  printf '%s/%s' "$BACKUP_ROOT/$TIMESTAMP" "$rel"
-}
-
-setup_backup_existing() {
-  local dest="$1"
-  local backup_dest
-  
-  backup_dest="$(setup_backup_dest_for "$dest")"
-  mkdir -p "$(dirname "$backup_dest")"
-  
-  echo "  📦 Backing up $dest to $backup_dest"
-  mv "$dest" "$backup_dest"
-}
-
-setup_prune_old_backups() {
-  local keep="$1"
-  local backup_count=0
-  local old_backups=()
-  local backup_dir
-  
-  [ -d "$BACKUP_ROOT" ] || return 0
-  
-  while IFS= read -r backup_dir; do
-    backup_count=$((backup_count + 1))
-    if [ "$backup_count" -gt "$keep" ]; then
-      old_backups+=("$backup_dir")
-    fi
-  done < <(find "$BACKUP_ROOT" -mindepth 1 -maxdepth 1 -type d | sort -r)
-  
-  if [ "${#old_backups[@]}" -eq 0 ]; then
-    return 0
-  fi
-  
-  echo "🧹 Pruning old backup runs (keeping newest $keep)..."
-  for backup_dir in "${old_backups[@]}"; do
-    echo "  🗑️  Removing $backup_dir"
-    rm -rf "$backup_dir"
-  done
-}
 
 # ==========================================
 # 🔗 4. LINKING (Done BEFORE installing tools so Mise has its config)
@@ -194,21 +138,23 @@ else
   echo "  -> 🧹 Clearing runway for Stow (Handling old symlinks and defaults)..."
   SHOULD_INSTALL_GUI=false
 
-  # 1. Expanded list of ALL targets (CLI + GUI)
-  STOW_TARGETS=(
-    ~/.bashrc ~/.bash_aliases ~/.profile ~/.gitconfig ~/.tmux.conf ~/.ssh/config
-    ~/.config/nvim ~/.config/starship.toml ~/.config/fastfetch ~/scripts ~/.config/mise
-    ~/.config/qutebrowser ~/.config/kitty ~/.config/sway ~/.config/yazi ~/.config/zathura
-  )
-
-  TIMESTAMP=$(date +%Y%m%d_%H%M%S)
   mkdir -p "$BACKUP_ROOT"
 
-  for target in "${STOW_TARGETS[@]}"; do
+  for pair in "${CORE_LINKS[@]}"; do
+    target="$HOME/${pair#*|}"
     if [ -L "$target" ]; then
       rm "$target" # Safely remove old symlinks
     elif [ -f "$target" ] || [ -d "$target" ]; then
-      setup_backup_existing "$target"
+      backup_existing "$target"
+    fi
+  done
+
+  for rel in "${GUI_TARGETS[@]}"; do
+    target="$HOME/$rel"
+    if [ -L "$target" ]; then
+      rm "$target"
+    elif [ -f "$target" ] || [ -d "$target" ]; then
+      backup_existing "$target"
     fi
   done
 
@@ -232,7 +178,7 @@ else
     fi
   fi
 
-  setup_prune_old_backups "$KEEP_BACKUPS"
+  prune_old_backups "$KEEP_BACKUPS"
   echo "🗂️  Backups stored under $BACKUP_ROOT"
 fi
 

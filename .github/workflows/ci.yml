@@ -1,0 +1,107 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  shellcheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: shellcheck
+        run: shellcheck setup install_tools link lib/detect.sh lib/backup.sh tests/detect-fixtures.sh tests/local-matrix.sh
+
+      - name: detect_pkg_mgr fixture tests
+        run: bash tests/detect-fixtures.sh
+
+  bootstrap-dry-run:
+    needs: shellcheck
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: debian-12
+            image: debian:12
+            pkg_mgr: apt
+            install_prereqs: "apt-get update -y && DEBIAN_FRONTEND=noninteractive apt-get install -y git curl ca-certificates"
+          - name: ubuntu-24.04
+            image: ubuntu:24.04
+            pkg_mgr: apt
+            install_prereqs: "apt-get update -y && DEBIAN_FRONTEND=noninteractive apt-get install -y git curl ca-certificates"
+          - name: fedora-40
+            image: fedora:40
+            pkg_mgr: dnf
+            install_prereqs: "dnf install -y git curl"
+          - name: archlinux-latest
+            image: archlinux:latest
+            pkg_mgr: pacman
+            install_prereqs: "pacman -Syu --noconfirm git curl"
+    runs-on: ubuntu-latest
+    # Container job steps default to `sh`, which is dash on Debian/Ubuntu — dash lacks
+    # process substitution (`<(...)`), arrays, and other bash-isms these scripts rely on.
+    defaults:
+      run:
+        shell: bash
+    container:
+      image: ${{ matrix.image }}
+    steps:
+      - name: Install checkout prerequisites
+        run: ${{ matrix.install_prereqs }}
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Validate GUI manifest package names (no install)
+        run: |
+          case "${{ matrix.pkg_mgr }}" in
+          apt)
+            mapfile -t pkgs < <(grep -vE '^[[:space:]]*(#|$)' packages/gui.apt)
+            apt-get install --simulate -y "${pkgs[@]}" >/dev/null
+            ;;
+          dnf)
+            while IFS= read -r pkg; do
+              [ -z "$pkg" ] && continue
+              dnf repoquery --qf '%{name}' "$pkg" >/dev/null || { echo "::error::dnf package not found: $pkg"; exit 1; }
+            done < <(grep -vE '^[[:space:]]*(#|$)' packages/gui.dnf)
+            ;;
+          pacman)
+            mapfile -t pkgs < <(grep -vE '^[[:space:]]*(#|$)' packages/gui.pacman)
+            pacman -Sp "${pkgs[@]}" >/dev/null
+            ;;
+          esac
+
+      - name: Dry-run bootstrap (--auto --env=container)
+        env:
+          # Avoids GitHub API rate-limiting when mise fetches releases (e.g. neovim).
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # setup clones upstream into ~/.dotfiles when it's missing; seed it with this checkout so the PR code is what gets tested.
+          rm -rf "$HOME/.dotfiles"
+          cp -a "$GITHUB_WORKSPACE" "$HOME/.dotfiles"
+          cd "$HOME/.dotfiles"
+          chmod +x setup install_tools link
+          ./setup --auto --env=container
+
+      - name: Re-run bootstrap (idempotency check)
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          cd "$HOME/.dotfiles"
+          ./setup --auto --env=container
+
+      - name: Verify core tools resolved
+        run: |
+          export PATH="$HOME/.local/bin:$HOME/.local/share/mise/bin:$HOME/.local/share/mise/shims:$PATH"
+          while IFS= read -r t; do
+            [ -z "$t" ] && continue
+            case "$t" in '#'*) continue ;; esac
+            command -v "$t" >/dev/null 2>&1 || { echo "::error::$t not found on PATH after bootstrap"; exit 1; }
+          done < tests/verify-tools.txt
