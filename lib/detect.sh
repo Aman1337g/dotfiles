@@ -48,7 +48,7 @@ detect_pkg_mgr() {
   local os_release_file="${DETECT_OS_RELEASE_FILE:-/etc/os-release}"
   if [ -r "$os_release_file" ]; then
     local ID="" ID_LIKE=""
-    # shellcheck disable=SC1090,SC1091
+    # shellcheck disable=SC1090,SC1091  # os-release path is dynamic (DETECT_OS_RELEASE_FILE override)
     . "$os_release_file"
     case " ${ID} ${ID_LIKE} " in
     *" debian "* | *" ubuntu "*)
