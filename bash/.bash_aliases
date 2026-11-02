@@ -246,8 +246,8 @@ gtog() {
     local t="$1" o repo
     o=$(git remote get-url origin 2>/dev/null) || return 0
     case "$t:$o" in
-      https:git@spgi:spglobal-innersource/*)
-        repo="${o#git@spgi:spglobal-innersource/}"; repo="${repo%.git}"
+      https:git@work:spglobal-innersource/*)
+        repo="${o#git@work:spglobal-innersource/}"; repo="${repo%.git}"
         git remote set-url origin "https://github.com/spglobal-innersource/${repo}.git" ;;
       https:git@github.com:spglobal-innersource/*)
         repo="${o#git@github.com:spglobal-innersource/}"; repo="${repo%.git}"
@@ -255,8 +255,8 @@ gtog() {
       ssh:https://github.com/spglobal-innersource/*)
         repo="${o#https://github.com/spglobal-innersource/}"; repo="${repo%.git}"
         git remote set-url origin "git@github.com:spglobal-innersource/${repo}.git" ;;
-      ssh:git@spgi:spglobal-innersource/*)
-        repo="${o#git@spgi:spglobal-innersource/}"; repo="${repo%.git}"
+      ssh:git@work:spglobal-innersource/*)
+        repo="${o#git@work:spglobal-innersource/}"; repo="${repo%.git}"
         git remote set-url origin "git@github.com:spglobal-innersource/${repo}.git" ;;
       *) return 0 ;;
     esac

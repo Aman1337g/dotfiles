@@ -27,3 +27,4 @@ node     = "lts"
 # Developer tools
 git-lfs  = "latest"
 topgrade = "latest"   # universal updater: runs mise upgrade + apt + more
+gh       = "latest"

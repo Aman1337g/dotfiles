@@ -11,7 +11,8 @@ delta     = "latest"   # git-delta: syntax-highlighted diff pager
 neovim    = "latest"
 
 # AI / LLM CLI
-opencode  = "latest"
+# opencode  = "latest"
 
 # Infrastructure
 terraform = "latest"
+aws-cli   = "latest"
