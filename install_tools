@@ -65,9 +65,15 @@ fi
 _install_linux_lifelines() {
   if [ "$ENV_TYPE" != "container" ] && [ "$ENV_TYPE" != "wsl" ] && ! _has docker; then
     echo "🐳 Installing native Docker Engine..."
-    # Pipe directly to sh — never mutate a downloaded script before execution.
-    # TODO: pin a version + checksum instead of trusting the live install script.
-    curl -fsSL https://get.docker.com | _sudo sh
+    if [ "$PKG_MGR" = "pacman" ]; then
+      # get.docker.com is unsupported on Arch; pacman ships docker directly.
+      _sudo pacman -S --noconfirm --needed docker
+      _has systemctl && { _sudo systemctl enable --now docker.service || true; }
+    else
+      # Pipe directly to sh — never mutate a downloaded script before execution.
+      # TODO: pin a version + checksum instead of trusting the live install script.
+      curl -fsSL https://get.docker.com | _sudo sh
+    fi
     _sudo usermod -aG docker "${USER:-$(id -un)}"
     echo "⚠️ Docker installed. (Log out and back in for group permissions to apply)."
   fi
@@ -152,6 +158,21 @@ apk)
   _sudo apk add "${APK_BASE[@]}"
   ;;
 
+pacman)
+  echo "🏹 Arch Linux family detected. Installing lifelines via pacman..."
+  # Never bare -Sy: partial upgrades are unsupported on Arch, always sync+upgrade together.
+  mapfile -t PACMAN_BASE < <(_read_manifest packages.pacman)
+  _sudo pacman -Syu --noconfirm --needed "${PACMAN_BASE[@]}"
+
+  if [ "$INSTALL_GUI" = true ]; then
+    echo "🖥️  Installing Native GUI Applications..."
+    mapfile -t PACMAN_GUI < <(_read_manifest gui.pacman)
+    _sudo pacman -S --noconfirm --needed "${PACMAN_GUI[@]}"
+  fi
+
+  _install_linux_lifelines
+  ;;
+
 winget)
   echo "🪟 Windows Git Bash detected. Bypassing UAC..."
   mkdir -p ~/.local/bin
@@ -171,12 +192,15 @@ winget)
   ;;
 esac
 
-# starship isn't in the default apt/dnf repos (Debian 12, Fedora), so fall back to the upstream installer.
+# starship isn't in the default apt/dnf repos (Debian 12, Fedora), so fall back to the upstream
+# installer. Not needed for pacman (starship ships in Arch's `extra` repo) or xbps (Void ships it too).
 if ! _has starship && [[ "$PKG_MGR" =~ ^(apt|dnf|apk)$ ]]; then
   echo "⭐ Installing starship via upstream installer..."
   mkdir -p "$HOME/.local/bin"
   # TODO: pin a version + checksum instead of trusting the live install script.
-  curl -fsSL https://starship.rs/install.sh | sh -s -- -y -b "$HOME/.local/bin" || echo "⚠️  starship install failed; continuing."
+  # stdout only silenced (install.sh dumps a long shell-init usage blurb); stderr still surfaces real errors.
+  curl -fsSL https://starship.rs/install.sh | sh -s -- -y -b "$HOME/.local/bin" >/dev/null \
+    || echo "⚠️  starship install failed; continuing."
 fi
 
 # ==========================================

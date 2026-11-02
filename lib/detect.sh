@@ -23,9 +23,12 @@ detect_env_type() {
   fi
 }
 
-# Prints: apt | dnf | xbps | apk | brew | pkg | winget | unknown
+# Prints: apt | dnf | xbps | apk | pacman | brew | pkg | winget | unknown
 # Linux distro family is read from /etc/os-release (ID + ID_LIKE) rather than
 # probing for binaries, so a minimal container with no tools yet still resolves.
+# The os-release path can be overridden via DETECT_OS_RELEASE_FILE for testing
+# (see tests/detect-fixtures.sh) — when overridden, the live-binary fallback below
+# is skipped so test results don't depend on what the test host happens to have installed.
 detect_pkg_mgr() {
   if [ -n "${TERMUX_VERSION:-}" ]; then
     echo "pkg"
@@ -42,10 +45,11 @@ detect_pkg_mgr() {
     return
   fi
 
-  if [ -r /etc/os-release ]; then
+  local os_release_file="${DETECT_OS_RELEASE_FILE:-/etc/os-release}"
+  if [ -r "$os_release_file" ]; then
     local ID="" ID_LIKE=""
-    # shellcheck disable=SC1091
-    . /etc/os-release
+    # shellcheck disable=SC1090,SC1091
+    . "$os_release_file"
     case " ${ID} ${ID_LIKE} " in
     *" debian "* | *" ubuntu "*)
       echo "apt"
@@ -63,12 +67,23 @@ detect_pkg_mgr() {
       echo "apk"
       return
       ;;
+    *" arch "*)
+      # Covers Arch itself (ID=arch) and derivatives via ID_LIKE=arch
+      # (manjaro, endeavouros, cachyos, garuda, arcolinux, ...).
+      echo "pacman"
+      return
+      ;;
     esac
+  fi
+
+  if [ -n "${DETECT_OS_RELEASE_FILE:-}" ]; then
+    echo "unknown"
+    return
   fi
 
   # Last-resort fallback for distros without /etc/os-release matches above.
   local mgr_probe
-  for mgr_probe in apt dnf xbps-install apk brew; do
+  for mgr_probe in apt dnf xbps-install apk pacman brew; do
     if command -v "$mgr_probe" >/dev/null 2>&1; then
       [ "$mgr_probe" = "xbps-install" ] && mgr_probe="xbps"
       echo "$mgr_probe"

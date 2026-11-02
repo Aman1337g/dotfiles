@@ -1,0 +1,5 @@
+# Arch Linux family GUI desktop extras, installed via `install_tools --gui`.
+# NOTE: names are from general knowledge of the Arch repos, not a live query — verify on first real run.
+kitty
+zathura
+qutebrowser

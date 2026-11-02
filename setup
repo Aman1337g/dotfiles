@@ -80,7 +80,7 @@ if [ "$AUTO_MODE" = false ]; then
 
   if [ -z "$ENV_TYPE" ]; then
     echo "Select your target environment:"
-    echo "  1) Linux (Native, Debian/Fedora/Void/...)"
+    echo "  1) Linux (Native, Debian/Fedora/Void/Arch/...)"
     echo "  2) WSL (Windows Subsystem for Linux)"
     echo "  3) macOS"
     echo "  4) DevPod / Container (Ephemeral)"

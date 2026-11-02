@@ -1,6 +1,6 @@
 # 💻 Aman's Dotfiles
 
-A production-grade, cross-platform collection of dotfiles and environment configurations. Built for speed, portability, and robust fallback handling across Debian/Ubuntu, Fedora, Void Linux, macOS, Alpine, Windows (WSL/Git Bash), Android (Termux), and Ephemeral Containers (DevPod/Docker).
+A production-grade, cross-platform collection of dotfiles and environment configurations. Built for speed, portability, and robust fallback handling across Debian/Ubuntu, Fedora, Arch Linux (and derivatives: Manjaro, EndeavourOS, CachyOS, Garuda, ArcoLinux), Void Linux, macOS, Alpine, Windows (WSL/Git Bash), Android (Termux), and Ephemeral Containers (DevPod/Docker).
 
 ## ✨ Features
 * **Mise-First Architecture:** Relegates native package managers (`apt`, `brew`) to basic lifelines, relying entirely on `mise` to dynamically provision exact versions of CLI tools (Neovim, Starship, Eza, FZF, Zoxide, Yazi, Bat, Node.js, Python, Terraform, kubectl, Helm) across every OS via environment-specific `config.toml` files.
@@ -19,13 +19,13 @@ A production-grade, cross-platform collection of dotfiles and environment config
 ```
 ~/.dotfiles/
 ├── setup                        # Bootstrap orchestrator (interactive + --auto/--env flags)
-├── install_tools                # Universal tool installer (apt/dnf/xbps/apk/brew/pkg/winget + Mise)
+├── install_tools                # Universal tool installer (apt/dnf/pacman/xbps/apk/brew/pkg/winget + Mise)
 ├── link                         # Manual symlink fallback when GNU Stow is unavailable
 ├── lib/                         # Shared shell libs sourced by setup/install_tools/link
 │   ├── detect.sh                #   ENV_TYPE + PKG_MGR detection (single source of truth)
 │   └── backup.sh                #   Backup-before-link + the shared core/GUI target list
 ├── packages/                    # Declarative package manifests (one file per manager)
-│   ├── packages.apt / .dnf / .xbps / .apk / .termux   # plain text, one package per line
+│   ├── packages.apt / .dnf / .pacman / .xbps / .apk / .termux   # plain text, one package per line
 │   ├── Brewfile                 #   native Homebrew Bundle format
 │   └── winget.json              #   native winget import/export format
 ├── os/                          # Platform-exclusive assets that aren't full Stow packages
@@ -62,6 +62,15 @@ A production-grade, cross-platform collection of dotfiles and environment config
 | ripgrep, fd, Python 3.12 | Linux |
 | Terraform, kubectl, Helm, AWS CLI | Container/DevPod |
 | Neovim, Eza, FZF (disabled — use winget) | Windows |
+
+---
+
+## 🧪 Testing
+
+- `bash tests/detect-fixtures.sh` — asserts `detect_pkg_mgr()` against fixture `/etc/os-release` files (debian, ubuntu, fedora, void, alpine, arch, manjaro, endeavouros, and an unrecognized distro).
+- `bash tests/local-matrix.sh` — shellcheck + the fixture tests + a full `setup --auto --env=container` dry-run (run twice, to catch non-idempotent steps) across debian:12, ubuntu:24.04, fedora:40, and archlinux:latest, via whichever of `podman`/`docker` is installed. Same checks CI runs in `.github/workflows/ci.yml`.
+
+**Out of scope:** AUR/`yay` (or any AUR helper) is intentionally not installed or supported on Arch — `packages.pacman`/`gui.pacman` only draw from the official repos. Void Linux isn't in the CI matrix (untested whether `voidlinux/voidlinux`'s glibc image is compatible with `actions/checkout`'s Node runtime in a container job) — it's still fully supported by `install_tools`/`detect_pkg_mgr`, just not continuously tested.
 
 ---
 
