@@ -53,15 +53,33 @@ _is_debian() {
 # Debian only (not Ubuntu or other apt derivatives) — points apt at Debian testing.
 # Mirrors scripts/scripts/mangowc_bootstrapper's write_testing_sources(). Idempotent:
 # skips if debian-testing.sources already exists.
+_APT_DISABLED_DIR=/etc/apt/disabled-by-dotfiles
+
+# apt warns about every file in sources.list.d without a .list/.sources extension, so disabled
+# sources are parked outside it. Also migrates files an earlier version renamed in place.
+_debian_park_disabled_sources() {
+  local f
+  for f in /etc/apt/sources.list.d/*.disabled-by-dotfiles; do
+    [ -e "$f" ] || continue
+    _sudo mkdir -p "$_APT_DISABLED_DIR"
+    _sudo mv "$f" "$_APT_DISABLED_DIR/$(basename "${f%.disabled-by-dotfiles}")"
+  done
+}
+
 _debian_use_testing_sources() {
   _is_debian || return 0
+  _debian_park_disabled_sources
   [ -f /etc/apt/sources.list.d/debian-testing.sources ] && return 0
 
   echo "📦 Switching Debian apt sources to testing..."
   _sudo mkdir -p /etc/apt/sources.list.d
   [ -f /etc/apt/sources.list ] && _sudo mv /etc/apt/sources.list /etc/apt/sources.list.disabled-by-dotfiles
-  _sudo find /etc/apt/sources.list.d -maxdepth 1 -type f -name '*.sources' \
-    ! -name 'debian-testing.sources' -exec mv {} {}.disabled-by-dotfiles \;
+  local f
+  for f in /etc/apt/sources.list.d/*.sources; do
+    [ -e "$f" ] && [ "$(basename "$f")" != debian-testing.sources ] || continue
+    _sudo mkdir -p "$_APT_DISABLED_DIR"
+    _sudo mv "$f" "$_APT_DISABLED_DIR/"
+  done
 
   cat <<'EOF' | _sudo tee /etc/apt/sources.list.d/debian-testing.sources >/dev/null
 Types: deb
