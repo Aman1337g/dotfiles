@@ -115,7 +115,10 @@ while IFS= read -r t; do
   case "$t" in "#"*) continue ;; esac
   command -v "$t" >/dev/null 2>&1 || { echo "MISSING TOOL: $t"; fail=1; }
 done < /src/tests/verify-tools.txt
-exit "$fail"
+[ "$fail" -eq 0 ] || exit "$fail"
+fams=$(fc-list : family)
+grep -qi "JetBrainsMono Nerd Font" <<<"$fams" || { echo "MISSING FONT: JetBrainsMono Nerd Font"; exit 1; }
+MISE_ENV=container fastfetch
 '
 
 # name|image|pkg_mgr|prereqs — pkg_mgr matches CI's matrix.pkg_mgr and the packages/gui.<pkg_mgr> filename.

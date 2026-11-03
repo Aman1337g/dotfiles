@@ -11,3 +11,4 @@ ca-certificates
 jq
 zoxide
 fzf
+fontconfig

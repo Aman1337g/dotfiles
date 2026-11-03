@@ -3,7 +3,7 @@
 # Intentionally absent (installed natively by install_tools, not via shim):
 #   starship   — called on every prompt draw
 #   zoxide     — called on every cd
-#   fastfetch  — single-binary utility, no version switching needed
+#   (fastfetch is provisioned by mise in config.container.toml; locally install it via your package manager)
 #
 # Platform overlays (loaded in addition to this file via MISE_ENV):
 #   config.linux.toml     — Debian / Ubuntu / WSL / Alpine
